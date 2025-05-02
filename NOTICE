@@ -1,0 +1,13 @@
+This product includes software developed by TocharinOU and contributors.
+Copyright (c) 2024 TocharinOU（Luke）
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+This product includes code from the Elastic Kibana OpenAPI specification,
+sourced from https://www.elastic.co/docs/api/doc/kibana/
+Copyright (c) Elastic
+Licensed under the Elastic License or other terms as described in the source. 

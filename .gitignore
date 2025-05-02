@@ -1,0 +1,43 @@
+dist
+node_modules
+
+# 日志文件
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 环境变量
+.env
+.env.*
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器配置
+.vscode/
+.idea/
+*.swp
+*.code-workspace
+
+# 测试覆盖率
+coverage/
+
+# 其他常见缓存
+.cache/
+.npm/
+.yarn/
+
+# TypeScript 构建信息
+*.tsbuildinfo
+
+# 临时文件
+*.tmp
+tmp/
+*.local.*
+
+# scripts 目录下的日志
+scripts/*.log
+
+.cur*

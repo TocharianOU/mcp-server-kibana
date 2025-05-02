@@ -1,0 +1,213 @@
+# Kibana MCP Server
+
+> **API Specification**
+>
+> This project is based on the official Elastic Kibana API documentation and uses the OpenAPI YAML specification from Elastic Stack 8.x (ES8) to dynamically retrieve and manage all Kibana API endpoints. For the latest details, see the [Kibana API documentation](https://www.elastic.co/docs/api/doc/kibana/).
+
+A Kibana MCP server implementation that allows any MCP-compatible client (such as Claude Desktop) to access your Kibana instance via natural language or programmatic requests.
+
+**This project is community-maintained and is not an official product of Elastic or MCP.**
+
+---
+
+## Features
+
+- Connect to local or remote Kibana instances
+- Secure authentication (username/password)
+- SSL/TLS and custom CA certificate support
+- Exposes Kibana API endpoints as both tools and resources
+- Search, view, and execute Kibana APIs from MCP clients
+- Type-safe, extensible, and easy to integrate
+
+---
+
+## Directory Structure
+
+```
+├── index.ts                # Server entry point
+├── src/
+│   ├── types.ts            # Type definitions and schemas
+│   ├── base-tools.ts       # Tool registration and API logic
+│   ├── prompts.ts          # Prompt registration (expert & resource helper)
+│   └── resources.ts        # Resource registration (API paths/URIs)
+├── kibana-openapi-source.yaml # Kibana API OpenAPI index
+├── README.md               # English documentation
+├── README_zh.md            # Chinese documentation
+```
+
+---
+
+## Resources
+
+| Resource URI                                   | Description                                        |
+|------------------------------------------------|----------------------------------------------------|
+| `kibana-api://paths`                           | Returns all available Kibana API endpoints (can filter with `search` param) |
+| `kibana-api://path/{method}/{encoded_path}`    | Returns details for a specific API endpoint        |
+
+**Examples:**
+- `kibana-api://paths?search=saved_objects`
+- `kibana-api://path/GET/%2Fapi%2Fstatus`
+
+---
+
+## Tools
+
+| Tool Name                   | Description                                        | Input Parameters                                                    |
+|-----------------------------|----------------------------------------------------|---------------------------------------------------------------------|
+| `get_status`                | Get the current status of the Kibana server        | None                                                                |
+| `execute_api`               | Execute a custom Kibana API request                | `method` (GET/POST/PUT/DELETE), `path` (string), `body` (optional), `params` (optional) |
+| `search_kibana_api_paths`   | Search Kibana API endpoints by keyword             | `search` (string)                                                   |
+| `list_all_kibana_api_paths` | List all Kibana API endpoints                      | None                                                                |
+| `get_kibana_api_detail`     | Get details for a specific Kibana API endpoint     | `method` (string), `path` (string)                                  |
+
+---
+
+## Prompts
+
+| Prompt Name              | Description                                                                 |
+|-------------------------|-----------------------------------------------------------------------------|
+| `kibana-tool-expert`    | Tool expert mode (highly recommended in Claude Desktop), supports intelligent analysis, search, execution, and explanation of Kibana APIs via tools. Recommended for most users. |
+| `kibana-resource-helper`| Resource helper mode, guides how to access and use Kibana API info via resource URIs. Suitable for clients that only support resource access or need raw API metadata. |
+
+---
+
+## Configuration
+
+Configure the server via environment variables:
+
+| Variable Name                    | Description                                         | Required |
+|----------------------------------|-----------------------------------------------------|----------|
+| `KIBANA_URL`                     | Kibana server address (e.g. http://localhost:5601)   | Yes      |
+| `KIBANA_USERNAME`                | Kibana username                                     | Yes      |
+| `KIBANA_PASSWORD`                | Kibana password                                     | Yes      |
+| `KIBANA_CA_CERT`                 | CA certificate path (optional, for SSL verification) | No       |
+| `KIBANA_TIMEOUT`                 | Request timeout in ms (default 30000)                | No       |
+| `KIBANA_MAX_RETRIES`             | Max request retries (default 3)                      | No       |
+| `NODE_TLS_REJECT_UNAUTHORIZED`   | Set to `0` to disable SSL certificate validation (use with caution) | No |
+
+---
+
+## Usage
+
+### Start the Server
+
+```bash
+KIBANA_URL=http://your-kibana-server:5601 \
+KIBANA_USERNAME=your-username \
+KIBANA_PASSWORD=your-password \
+NODE_TLS_REJECT_UNAUTHORIZED=0 \
+npm start
+```
+
+### Example MCP Client Configuration
+
+Add to the Claude Desktop config file (MacOS path: `~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "kibana-mcp-server": {
+      "command": "node",
+      "args": ["/path/to/mcp-server-kibana/dist/index.js"],
+      "env": {
+        "KIBANA_URL": "http://your-kibana-server:5601",
+        "KIBANA_USERNAME": "your-username",
+        "KIBANA_PASSWORD": "your-password",
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+      }
+    }
+  }
+}
+```
+
+---
+
+## Example Queries
+
+- "What is the status of my Kibana server?"
+- "List all available Kibana API endpoints."
+- "Show details for the POST /api/saved_objects/_find endpoint."
+- "Execute a custom API request for /api/status."
+- "Get a list of all dashboards in Kibana."
+- "Query API endpoints related to endpoint events."
+- "List all case-related API endpoints."
+- "Create a new case in Kibana."
+- "Create a new dashboard in Kibana."
+
+---
+
+## Two Prompt Modes in Claude Desktop
+
+When using this server with Claude Desktop, two different prompt interaction modes are supported:
+
+### 1. Tool-based Prompt Mode
+- **How it works:** Claude Desktop can directly call server tools (such as `get_status`, `execute_api`, `search_kibana_api_paths`, etc.) to answer your questions or perform actions.
+- **Best for:** Users who want a conversational, guided experience. The server will automatically search, execute, and explain Kibana APIs.
+- **Example:** "Show all Kibana API endpoints related to saved objects."
+- **Testing tip:** Select the `kibana-tool-expert` prompt in Claude Desktop for integration testing, then start using it.
+
+### 2. Resource-based Prompt Mode
+- **How it works:** Claude Desktop interacts with the server via resource URIs (such as `kibana-api://paths` or `kibana-api://path/GET/%2Fapi%2Fstatus`), and the server returns structured data for Claude to parse.
+- **Best for:** Advanced users, MCP clients that only support resource access, or programming scenarios needing raw API metadata.
+- **Example:** "Get resource kibana-api://paths?search=dashboard"
+
+**Note:** The two endpoints in `resources` (`kibana-api://paths` and `kibana-api://path/{method}/{encoded_path}`) have corresponding base tools (`list_all_kibana_api_paths`, `get_kibana_api_detail`). This design ensures compatibility with MCP clients that cannot intelligently select multiple resources, making it easier for tools like Claude Desktop to interact with Kibana.
+
+**Tip:** Most users are recommended to use tool mode for a more natural and powerful experience; resource mode offers maximum flexibility for advanced and compatibility use cases.
+
+---
+
+## Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Build the server:
+
+```bash
+npm run build
+```
+
+Auto-rebuild in development mode:
+
+```bash
+npm run watch
+```
+
+---
+
+## Debugging
+
+Since the MCP server communicates via stdio, debugging can be inconvenient. It is recommended to use MCP Inspector:
+
+```bash
+npm run inspector
+```
+
+After starting, Inspector will provide a browser-accessible debugging tool URL.
+
+---
+
+## Community
+
+This project is community-maintained. Contributions and feedback are welcome! Please be respectful and inclusive in all communications, and follow the [Elastic Community Code of Conduct](https://www.elastic.co/community/codeofconduct).
+
+---
+
+## License
+
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
+
+---
+
+## Troubleshooting
+
+- Check if MCP configuration is correct
+- Ensure the Kibana address is accessible
+- Verify authentication credentials have sufficient permissions
+- If using a custom CA, ensure the certificate path is correct and readable
+- If using `NODE_TLS_REJECT_UNAUTHORIZED=0`, be aware of security risks
+- Check error messages output in the terminal
