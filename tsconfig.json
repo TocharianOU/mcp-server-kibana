@@ -7,10 +7,9 @@
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "outDir": "dist",
-    "rootDir": "src",
     "declaration": true,
     "sourceMap": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "index.ts"],
   "exclude": ["node_modules", "dist"]
 }
