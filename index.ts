@@ -169,15 +169,14 @@ export async function createKibanaMcpServer(options: ServerCreationOptions): Pro
   const validatedConfig = KibanaConfigSchema.parse(config);
   const kibanaClient = createKibanaClient(validatedConfig);
 
-  // 初始化MCP服务器
   const server = new McpServer({
     name,
     version,
     transport: transport || new StdioServerTransport(),
     capabilities: {
       tools: {},
-      prompts: { listChanged: false },  // Enable prompts capability
-      resources: {}  // Enable resources capability
+      prompts: { listChanged: false },
+      resources: {}
     }
   });
 
@@ -234,23 +233,30 @@ export async function createKibanaMcpServer(options: ServerCreationOptions): Pro
           const result = await Promise.resolve(handler(args, extra));
           return result;
         } catch (error) {
-          console.error(`Error in prompt '${name}':`, error);
-          throw error; // Let MCP server handle prompt errors
+          return {
+            content: [{
+              type: "text",
+              text: `Error in prompt '${name}': ${error instanceof Error ? error.message : String(error)}`
+            }],
+            isError: true
+          };
         }
       });
     },
     
     resource: (name: string, uriOrTemplate: any, handler: any) => {
-      // For the MCP SDK, we need to simplify our implementation because the actual types
-      // of ResourceTemplate and other specifics may be internal to the SDK
       server.resource(name, uriOrTemplate, async (...args: any[]) => {
         try {
-          // Pass all arguments through to the handler
           const result = await Promise.resolve(handler(...args));
           return result;
         } catch (error) {
-          console.error(`Error in resource '${name}':`, error);
-          throw error; // Let MCP server handle resource errors
+          return {
+            content: [{
+              type: "text",
+              text: `Error in resource '${name}': ${error instanceof Error ? error.message : String(error)}`
+            }],
+            isError: true
+          };
         }
       });
     }
@@ -265,17 +271,12 @@ export async function createKibanaMcpServer(options: ServerCreationOptions): Pro
 
   await Promise.all(registrations);
 
-  // Register resource handlers
-  // TODO: Add more resource handlers if needed
-
   return server;
 }
 
 // Main function
 async function main() {
   try {
-    console.log("Starting MCP server...");
-    
     // Create configuration from environment variables
     const config: KibanaConfig = {
       url: process.env.KIBANA_URL || "http://localhost:5601",
@@ -285,36 +286,28 @@ async function main() {
       timeout: parseInt(process.env.KIBANA_TIMEOUT || "30000", 10),
       maxRetries: parseInt(process.env.KIBANA_MAX_RETRIES || "3", 10),
     };
-    console.log("Config loaded:", { ...config, password: "***" });
 
     // Create and connect server
-    console.log("Creating MCP server...");
     const server = await createKibanaMcpServer({
       name: "kibana-mcp-server",
-      version: "1.0.0",
+      version: "0.1.1",
       config,
     });
-    console.log("MCP server created successfully");
 
-    console.log("Connecting transport...");
+    // Connect transport
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.log("Transport connected successfully");
 
     // Handle process termination
     process.on("SIGINT", async () => {
-      console.log("Shutting down...");
       await server.close();
       process.exit(0);
     });
     
-    console.log("Server setup complete, ready to handle requests");
   } catch (error) {
-    console.error("Error starting server:", error);
     process.exit(1);
   }
 }
 
 // Start server
-console.log("Initializing application...");
 main();
