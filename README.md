@@ -1,5 +1,5 @@
 # Kibana MCP Server
-
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/TocharianOU/mcp-server-kibana)
 > **API Specification**
 >
 > This project is based on the official Elastic Kibana API documentation and uses the OpenAPI YAML specification from Elastic Stack 8.x (ES8) to dynamically retrieve and manage all Kibana API endpoints. For the latest details, see the [Kibana API documentation](https://www.elastic.co/docs/api/doc/kibana/).
