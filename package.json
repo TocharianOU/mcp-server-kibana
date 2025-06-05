@@ -16,16 +16,19 @@
   "keywords": [
     "kibana",
     "mcp",
-    "mcp-server"
+    "mcp-server",
+    "elasticsearch",
+    "model-context-protocol"
   ],
   "files": [
     "dist",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "kibana-openapi-source.yaml"
   ],
   "scripts": {
-    "build": "tsc && shx chmod +x dist/*.js && npm run copy-yaml",
-    "copy-yaml": "shx cp ./kibana-openapi-source.yaml dist/src/ && shx cp ./kibana-openapi-source.yaml dist/",
+    "build": "tsc && shx chmod +x dist/index.js && npm run copy-yaml",
+    "copy-yaml": "shx cp ./kibana-openapi-source.yaml dist/ && shx cp ./kibana-openapi-source.yaml dist/src/",
     "prepare": "npm run build",
     "watch": "tsc --watch",
     "start": "node dist/index.js",
