@@ -1,4 +1,7 @@
 # Kibana MCP 服务器
+[![npm 版本](https://badge.fury.io/js/@tocharian%2Fmcp-server-kibana.svg)](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
+[![下载量](https://img.shields.io/npm/dm/@tocharian/mcp-server-kibana.svg)](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/TocharianOU/mcp-server-kibana)
 
 > **API 规范**
 >
@@ -87,28 +90,51 @@
 
 ---
 
-## 使用方法
+## 🚀 安装
 
-### 启动服务器
-
+### 快速安装
 ```bash
+# 全局安装（推荐）
+npm install -g @tocharian/mcp-server-kibana
+
+# 或本地安装
+npm install @tocharian/mcp-server-kibana
+```
+
+### 替代方案：从源码安装
+```bash
+git clone https://github.com/TocharinOU/mcp-server-kibana.git
+cd mcp-server-kibana
+npm install
+npm run build
+```
+
+---
+
+## 🎯 快速开始
+
+### 方法 1: 直接命令行使用
+```bash
+# 设置 Kibana 凭据并运行
 KIBANA_URL=http://your-kibana-server:5601 \
 KIBANA_USERNAME=your-username \
 KIBANA_PASSWORD=your-password \
-NODE_TLS_REJECT_UNAUTHORIZED=0 \
-npm start
+npx @tocharian/mcp-server-kibana
 ```
 
-### MCP 客户端配置示例
+### 方法 2: Claude Desktop 集成（推荐）
+添加到 Claude Desktop 配置文件：
 
-添加到 Claude Desktop 配置文件（MacOS 路径：`~/Library/Application Support/Claude/claude_desktop_config.json`）：
+**配置文件位置:**
+- **MacOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "kibana-mcp-server": {
-      "command": "node",
-      "args": ["/path/to/mcp-server-kibana/dist/index.js"],
+      "command": "npx",
+      "args": ["@tocharian/mcp-server-kibana"],
       "env": {
         "KIBANA_URL": "http://your-kibana-server:5601",
         "KIBANA_USERNAME": "your-username",
@@ -203,7 +229,27 @@ npm run inspector
 
 ---
 
-## 故障排查
+## 📦 包信息
+
+- **NPM 包**: [@tocharian/mcp-server-kibana](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
+- **GitHub 仓库**: [TocharinOU/mcp-server-kibana](https://github.com/TocharinOU/mcp-server-kibana)
+- **Node.js 要求**: >= 18.0.0
+- **包大小**: ~685KB (解压后 6.4MB)
+
+---
+
+## 🔧 故障排查
+
+### 常见问题
+
+#### "import: command not found" 错误
+```bash
+# 确保使用最新版本
+npm install -g @tocharian/mcp-server-kibana@latest
+
+# 或尝试直接使用 node
+node $(which mcp-server-kibana)
+```
 
 - 检查 MCP 配置是否正确
 - 确认 Kibana 地址可访问
