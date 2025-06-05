@@ -1,5 +1,8 @@
 # Kibana MCP Server
+[![npm version](https://badge.fury.io/js/@tocharian%2Fmcp-server-kibana.svg)](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
+[![Downloads](https://img.shields.io/npm/dm/@tocharian/mcp-server-kibana.svg)](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/TocharianOU/mcp-server-kibana)
+
 > **API Specification**
 >
 > This project is based on the official Elastic Kibana API documentation and uses the OpenAPI YAML specification from Elastic Stack 8.x (ES8) to dynamically retrieve and manage all Kibana API endpoints. For the latest details, see the [Kibana API documentation](https://www.elastic.co/docs/api/doc/kibana/).
@@ -7,6 +10,78 @@
 A Kibana MCP server implementation that allows any MCP-compatible client (such as Claude Desktop) to access your Kibana instance via natural language or programmatic requests.
 
 **This project is community-maintained and is not an official product of Elastic or MCP.**
+
+---
+
+## 🚀 Installation
+
+### Quick Install
+```bash
+# Global installation (recommended)
+npm install -g @tocharian/mcp-server-kibana
+
+# Or local installation
+npm install @tocharian/mcp-server-kibana
+```
+
+### Alternative: From Source
+```bash
+git clone https://github.com/TocharinOU/mcp-server-kibana.git
+cd mcp-server-kibana
+npm install
+npm run build
+```
+
+---
+
+## 🎯 Quick Start
+
+### Method 1: Direct CLI Usage
+```bash
+# Set your Kibana credentials and run
+KIBANA_URL=http://your-kibana-server:5601 \
+KIBANA_USERNAME=your-username \
+KIBANA_PASSWORD=your-password \
+npx @tocharian/mcp-server-kibana
+```
+
+### Method 2: Claude Desktop Integration (Recommended)
+Add to your Claude Desktop configuration file:
+
+**Config file locations:**
+- **MacOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "kibana-mcp-server": {
+      "command": "npx",
+      "args": ["@tocharian/mcp-server-kibana"],
+      "env": {
+        "KIBANA_URL": "http://your-kibana-server:5601",
+        "KIBANA_USERNAME": "your-username",
+        "KIBANA_PASSWORD": "your-password",
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+      }
+    }
+  }
+}
+```
+
+### Method 3: Using Environment File
+```bash
+# Create .env file
+cat > kibana-mcp.env << EOF
+KIBANA_URL=http://your-kibana-server:5601
+KIBANA_USERNAME=your-username
+KIBANA_PASSWORD=your-password
+NODE_TLS_REJECT_UNAUTHORIZED=0
+EOF
+
+# Run with environment file
+env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
+```
 
 ---
 
@@ -87,38 +162,37 @@ Configure the server via environment variables:
 
 ---
 
-## Usage
+## 📦 Package Information
 
-### Start the Server
+- **NPM Package**: [@tocharian/mcp-server-kibana](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
+- **GitHub Repository**: [TocharinOU/mcp-server-kibana](https://github.com/TocharinOU/mcp-server-kibana)
+- **Node.js**: >= 18.0.0
+- **Package Size**: ~685KB (6.4MB unpacked)
 
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### "import: command not found" error
 ```bash
-KIBANA_URL=http://your-kibana-server:5601 \
-KIBANA_USERNAME=your-username \
-KIBANA_PASSWORD=your-password \
-NODE_TLS_REJECT_UNAUTHORIZED=0 \
-npm start
+# Make sure you're using the latest version
+npm install -g @tocharian/mcp-server-kibana@latest
+
+# Or try using node directly
+node $(which mcp-server-kibana)
 ```
 
-### Example MCP Client Configuration
+#### Connection issues
+- Verify Kibana URL is accessible
+- Check authentication credentials
+- For SSL issues, try setting `NODE_TLS_REJECT_UNAUTHORIZED=0`
 
-Add to the Claude Desktop config file (MacOS path: `~/Library/Application Support/Claude/claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "kibana-mcp-server": {
-      "command": "node",
-      "args": ["/path/to/mcp-server-kibana/dist/index.js"],
-      "env": {
-        "KIBANA_URL": "http://your-kibana-server:5601",
-        "KIBANA_USERNAME": "your-username",
-        "KIBANA_PASSWORD": "your-password",
-        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
-      }
-    }
-  }
-}
-```
+#### Claude Desktop not detecting the server
+- Restart Claude Desktop after config changes
+- Check config file syntax with a JSON validator
+- Verify environment variables are set correctly
 
 ---
 
