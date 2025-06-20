@@ -64,6 +64,7 @@ Add to your Claude Desktop configuration file:
         "KIBANA_URL": "http://your-kibana-server:5601",
         "KIBANA_USERNAME": "your-username",
         "KIBANA_PASSWORD": "your-password",
+        "KIBANA_DEFAULT_SPACE": "default",
         "NODE_TLS_REJECT_UNAUTHORIZED": "0"
       }
     }
@@ -159,7 +160,7 @@ Configure the server via environment variables:
 | `KIBANA_URL`                     | Kibana server address (e.g. http://localhost:5601)   | Yes      |
 | `KIBANA_USERNAME`                | Kibana username                                     | Yes      |
 | `KIBANA_PASSWORD`                | Kibana password                                     | Yes      |
-| `KIBANA_SPACE`                   | Target Kibana space (default: 'default')           | No       |
+| `KIBANA_DEFAULT_SPACE`           | Default Kibana space (default: 'default')          | No       |
 | `KIBANA_CA_CERT`                 | CA certificate path (optional, for SSL verification) | No       |
 | `KIBANA_TIMEOUT`                 | Request timeout in ms (default 30000)                | No       |
 | `KIBANA_MAX_RETRIES`             | Max request retries (default 3)                      | No       |

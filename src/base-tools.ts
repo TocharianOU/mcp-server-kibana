@@ -326,7 +326,7 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
     }
   );
 
-  // 新增：获取可用空间的统一工具
+
   server.tool(
     "get_available_spaces",
     "Get all available Kibana spaces with current context",

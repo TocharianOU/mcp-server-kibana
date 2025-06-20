@@ -85,6 +85,7 @@
 | `KIBANA_URL`                     | Kibana 服务器地址（如 http://localhost:5601） | 是       |
 | `KIBANA_USERNAME`                | Kibana 用户名                                | 是       |
 | `KIBANA_PASSWORD`                | Kibana 密码                                  | 是       |
+| `KIBANA_DEFAULT_SPACE`           | 默认 Kibana 空间（默认: 'default'）           | 否       |
 | `KIBANA_CA_CERT`                 | CA 证书路径（可选，用于 SSL 验证）           | 否       |
 | `KIBANA_TIMEOUT`                 | 请求超时时间（毫秒，默认 30000）             | 否       |
 | `KIBANA_MAX_RETRIES`             | 最大请求重试次数（默认 3）                   | 否       |
@@ -141,6 +142,7 @@ npx @tocharian/mcp-server-kibana
         "KIBANA_URL": "http://your-kibana-server:5601",
         "KIBANA_USERNAME": "your-username",
         "KIBANA_PASSWORD": "your-password",
+        "KIBANA_DEFAULT_SPACE": "default",
         "NODE_TLS_REJECT_UNAUTHORIZED": "0"
       }
     }
