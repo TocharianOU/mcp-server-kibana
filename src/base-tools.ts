@@ -128,20 +128,23 @@ function resolveRef(obj: any, doc: any, seen = new Set()): any {
   return result;
 }
 
-export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient) {
+export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient, defaultSpace: string) {
   // Tool: Get Kibana server status
   server.tool(
     "get_status",
-    "Get Kibana server status",
-    z.object({}),
-    async (): Promise<ToolResponse> => {
+    `Get Kibana server status with multi-space support`,
+    z.object({
+      space: z.string().optional().describe("Target Kibana space (optional, defaults to configured space)")
+    }),
+    async ({ space }): Promise<ToolResponse> => {
       try {
-        const response = await kibanaClient.get('/api/status');
+        const targetSpace = space || defaultSpace;
+        const response = await kibanaClient.get('/api/status', { space });
         return {
           content: [
             {
               type: "text",
-              text: `Kibana server status: ${JSON.stringify(response, null, 2)}`
+              text: `[Space: ${targetSpace}] Kibana server status: ${JSON.stringify(response, null, 2)}`
             }
           ]
         };
@@ -163,34 +166,38 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
   // Tool: Execute custom API request
   server.tool(
     "execute_api",
-    "Execute a custom API request for Kibana",
+    `Execute a custom API request for Kibana with multi-space support`,
     z.object({
       method: z.enum(['GET', 'POST', 'PUT', 'DELETE']),
       path: z.string(),
       body: z.any().optional(),
-      params: z.record(z.string()).optional()
+      params: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
+      space: z.string().optional().describe("Target Kibana space (optional, defaults to configured space)")
     }),
-    async ({ method, path, body, params }): Promise<ToolResponse> => {
+    async ({ method, path, body, params, space }): Promise<ToolResponse> => {
       try {
+        const targetSpace = space || defaultSpace;
         let url = path;
         if (params) {
-          const queryString = new URLSearchParams(params).toString();
+          const queryString = new URLSearchParams(
+            Object.entries(params).map(([key, value]) => [key, String(value)])
+          ).toString();
           url += `?${queryString}`;
         }
 
         let response;
         switch (method.toLowerCase()) {
           case 'get':
-            response = await kibanaClient.get(url);
+            response = await kibanaClient.get(url, { space });
             break;
           case 'post':
-            response = await kibanaClient.post(url, body);
+            response = await kibanaClient.post(url, body, { space });
             break;
           case 'put':
-            response = await kibanaClient.put(url, body);
+            response = await kibanaClient.put(url, body, { space });
             break;
           case 'delete':
-            response = await kibanaClient.delete(url);
+            response = await kibanaClient.delete(url, { space });
             break;
           default:
             throw new Error(`Unsupported HTTP method: ${method}`);
@@ -200,7 +207,7 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
           content: [
             {
               type: "text",
-              text: `API response: ${JSON.stringify(response, null, 2)}`
+              text: `[Space: ${targetSpace}] API response: ${JSON.stringify(response, null, 2)}`
             }
           ]
         };
@@ -222,7 +229,7 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
   // Tool: Search Kibana API endpoints (by keyword)
   server.tool(
     "search_kibana_api_paths",
-    "Search Kibana API endpoints by keyword",
+    `Search Kibana API endpoints by keyword`,
     z.object({
       search: z.string().describe('Search keyword for filtering API endpoints')
     }),
@@ -233,12 +240,12 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
         content: [
           {
             type: "text",
-            text: JSON.stringify(endpoints.map(e => ({
+            text: `Found ${endpoints.length} API endpoints: ${JSON.stringify(endpoints.map(e => ({
               method: e.method,
               path: e.path,
               summary: e.summary,
               description: e.description
-            })), null, 2)
+            })), null, 2)}`
           }
         ]
       };
@@ -248,7 +255,7 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
   // Tool: List all Kibana API endpoints (no filter, full list, resource style)
   server.tool(
     "list_all_kibana_api_paths",
-    "List all Kibana API endpoints as a resource list (no filter)",
+    `List all Kibana API endpoints as a resource list`,
     z.object({}),
     async (): Promise<ToolResponse> => {
       await buildApiIndex();
@@ -280,7 +287,7 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
   // Tool: Get details for a specific Kibana API endpoint
   server.tool(
     "get_kibana_api_detail",
-    "Get details for a specific Kibana API endpoint",
+    `Get details for a specific Kibana API endpoint`,
     z.object({
       method: z.string().describe("HTTP method, e.g. GET, POST, PUT, DELETE"),
       path: z.string().describe("API path, e.g. /api/actions/connector_types")
@@ -312,10 +319,53 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
         content: [
           {
             type: "text",
-            text: JSON.stringify(detailed, null, 2)
+            text: `API endpoint details: ${JSON.stringify(detailed, null, 2)}`
           }
         ]
       };
+    }
+  );
+
+  // 新增：获取可用空间的统一工具
+  server.tool(
+    "get_available_spaces",
+    "Get all available Kibana spaces with current context",
+    z.object({
+      include_details: z.boolean().optional().default(true).describe("Include detailed space information (name, description, etc.)")
+    }),
+    async ({ include_details = true }): Promise<ToolResponse> => {
+      try {
+        const response = await kibanaClient.get('/api/spaces/space');
+        
+        const result = {
+          current_default_space: defaultSpace,
+          total_count: response.length,
+          available_spaces: include_details ? response : response.map((space: any) => ({
+            id: space.id,
+            name: space.name
+          }))
+        };
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2)
+            }
+          ]
+        };
+      } catch (error) {
+        console.error(`Failed to get available spaces: ${error}`);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`
+            }
+          ],
+          isError: true
+        };
+      }
     }
   );
 } 

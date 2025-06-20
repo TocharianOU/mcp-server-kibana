@@ -18,6 +18,7 @@
 - 支持连接本地或远程 Kibana 实例
 - 安全认证（用户名/密码）
 - 支持 SSL/TLS 及自定义 CA 证书
+- 支持多空间的企业级 Kibana 环境
 - 以工具和资源两种方式暴露 Kibana API 端点
 - 支持 MCP 客户端搜索、查看、执行 Kibana API
 - 类型安全、可扩展、易集成
@@ -57,8 +58,9 @@
 
 | 工具名称                    | 描述                                         | 输入参数                                                         |
 |-----------------------------|----------------------------------------------|------------------------------------------------------------------|
-| `get_status`                | 获取 Kibana 服务器当前状态                   | 无                                                               |
-| `execute_api`               | 执行自定义 Kibana API 请求                   | `method` (GET/POST/PUT/DELETE), `path` (字符串), `body` (可选), `params` (可选) |
+| `get_status`                | 获取 Kibana 服务器当前状态                   | `space` (可选字符串) - 目标 Kibana 空间                         |
+| `execute_api`               | 执行自定义 Kibana API 请求                   | `method` (GET/POST/PUT/DELETE), `path` (字符串), `body` (可选), `params` (可选), `space` (可选字符串) |
+| `get_available_spaces`      | 获取可用的 Kibana 空间和当前上下文           | `include_details` (可选布尔值) - 包含完整空间详情                |
 | `search_kibana_api_paths`   | 按关键字搜索 Kibana API 端点                 | `search` (字符串)                                                |
 | `list_all_kibana_api_paths` | 列出所有 Kibana API 端点                     | 无                                                               |
 | `get_kibana_api_detail`     | 获取指定 Kibana API 端点的详细信息           | `method` (字符串), `path` (字符串)                                |
@@ -151,14 +153,18 @@ npx @tocharian/mcp-server-kibana
 ## 示例查询
 
 - "我的 Kibana 服务器状态如何？"
+- "营销空间中我的 Kibana 服务器状态如何？"
+- "列出我可以访问的所有 Kibana 空间。"
 - "列出所有可用的 Kibana API 端点。"
 - "显示 POST /api/saved_objects/_find 端点的详细信息。"
 - "为 /api/status 执行自定义 API 请求。"
 - "获取 Kibana 中所有仪表盘的列表。"
+- "获取生产空间中所有仪表盘的列表。"
 - "查询与 endpoint events 相关的 API 端点。"
 - "列出所有 case 相关的 API 端点。"
 - "在 Kibana 中创建一个新 case。"
 - "在 Kibana 中创建一个新仪表盘。"
+- "在开发团队空间中创建一个新仪表盘。"
 
 ---
 

@@ -27,6 +27,7 @@ export const KibanaConfigSchema = z.object({
   caCert: z.string().optional(),
   timeout: z.number().optional().default(30000),
   maxRetries: z.number().optional().default(3),
+  defaultSpace: z.string().optional().default('default'),
 });
 
 export type KibanaConfig = z.infer<typeof KibanaConfigSchema>;
@@ -65,11 +66,11 @@ export interface PromptResponse {
 
 // Kibana client interface
 export interface KibanaClient {
-  get: (url: string, options?: { params?: any; headers?: any }) => Promise<any>;
-  post: (url: string, data?: any, options?: { headers?: any }) => Promise<any>;
-  put: (url: string, data?: any, options?: { headers?: any }) => Promise<any>;
-  delete: (url: string, options?: { headers?: any }) => Promise<any>;
-  patch?: (url: string, data?: any, options?: { headers?: any }) => Promise<any>;
+  get: (url: string, options?: { params?: any; headers?: any; space?: string }) => Promise<any>;
+  post: (url: string, data?: any, options?: { headers?: any; space?: string }) => Promise<any>;
+  put: (url: string, data?: any, options?: { headers?: any; space?: string }) => Promise<any>;
+  delete: (url: string, options?: { headers?: any; space?: string }) => Promise<any>;
+  patch?: (url: string, data?: any, options?: { headers?: any; space?: string }) => Promise<any>;
 }
 
 // Server base interface for tools, prompts, and resources registration
@@ -120,4 +121,5 @@ export interface ServerCreationOptions {
   version: string;
   transport?: any;
   config: KibanaConfig;
+  description?: string;
 } 
