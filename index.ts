@@ -302,25 +302,25 @@ async function main() {
       caCert: process.env.KIBANA_CA_CERT,
       timeout: parseInt(process.env.KIBANA_TIMEOUT || "30000", 10),
       maxRetries: parseInt(process.env.KIBANA_MAX_RETRIES || "3", 10),
-      defaultSpace: process.env.KIBANA_SPACE || 'default'
+      defaultSpace: process.env.KIBANA_DEFAULT_SPACE || 'default'
     };
 
-    // 根据空间动态构建服务器名称和描述
+   
     const defaultSpace = config.defaultSpace || 'default';
     const serverName = "kibana-mcp-server";
     const serverDescription = defaultSpace === 'default' 
       ? "Kibana MCP Server with multi-space support"
       : `Kibana MCP Server with multi-space support (default: '${defaultSpace}')`;
 
-    // 使用 stderr 而不是 stdout
+   
     process.stderr.write(`Starting Kibana MCP Server for space: ${defaultSpace}\n`);
     
     // Create and connect server
     const server = await createKibanaMcpServer({
       name: serverName,
-      version: "0.1.3",
+      version: "0.1.4",
       config,
-      // 添加描述信息
+
       description: serverDescription
     });
 
