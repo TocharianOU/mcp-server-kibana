@@ -81,7 +81,7 @@ function searchApiEndpoints(query: string): ApiEndpoint[] {
   );
 }
 
-export function registerResources(server: ServerBase, kibanaClient: KibanaClient) {
+export function registerResources(server: ServerBase, kibanaClient: KibanaClient, spaceName: string) {
   // 1. API path list resource
   server.resource(
     "kibana-api-paths",
@@ -95,12 +95,17 @@ export function registerResources(server: ServerBase, kibanaClient: KibanaClient
           {
             uri: uri.href,
             mimeType: "application/json",
-            text: JSON.stringify(endpoints.map(e => ({
-              method: e.method,
-              path: e.path,
-              summary: e.summary,
-              description: e.description
-            })), null, 2)
+            text: JSON.stringify({
+              space: spaceName,
+              total_endpoints: endpoints.length,
+              search_query: search || "all",
+              endpoints: endpoints.map(e => ({
+                method: e.method,
+                path: e.path,
+                summary: e.summary,
+                description: e.description
+              }))
+            }, null, 2)
           }
         ]
       };
@@ -121,8 +126,12 @@ export function registerResources(server: ServerBase, kibanaClient: KibanaClient
           contents: [
             {
               uri: uri.href,
-              mimeType: "text/plain",
-              text: "API endpoint not found"
+              mimeType: "application/json",
+              text: JSON.stringify({
+                space: spaceName,
+                error: "API endpoint not found",
+                requested: { method, path }
+              }, null, 2)
             }
           ]
         };
@@ -132,7 +141,10 @@ export function registerResources(server: ServerBase, kibanaClient: KibanaClient
           {
             uri: uri.href,
             mimeType: "application/json",
-            text: JSON.stringify(endpoint, null, 2)
+            text: JSON.stringify({
+              space: spaceName,
+              endpoint: endpoint
+            }, null, 2)
           }
         ]
       };

@@ -55,7 +55,15 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
     }
   }
 
- 
+  // 动态的 URL 转换逻辑 - 支持每次调用时指定空间
+  const buildSpaceAwareUrl = (url: string, space?: string): string => {
+    const targetSpace = space || config.defaultSpace;
+    if (targetSpace && targetSpace !== 'default' && url.startsWith('/api/')) {
+      return `/s/${targetSpace}${url}`;
+    }
+    return url;
+  };
+
   const axiosInstance = axios.create(axiosConfig);
   
 
@@ -72,9 +80,10 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
   );
 
   return {
-    get: async (url: string, options?: { params?: any; headers?: any }) => {
+    get: async (url: string, options?: { params?: any; headers?: any; space?: string }) => {
+      const spaceAwareUrl = buildSpaceAwareUrl(url, options?.space);
       try {
-        const response = await axiosInstance.get(url, { 
+        const response = await axiosInstance.get(spaceAwareUrl, { 
           params: options?.params,
           headers: { ...axiosConfig.headers, ...options?.headers }
         });
@@ -88,9 +97,10 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
         );
       }
     },
-    post: async (url: string, data?: any, options?: { headers?: any }) => {
+    post: async (url: string, data?: any, options?: { headers?: any; space?: string }) => {
+      const spaceAwareUrl = buildSpaceAwareUrl(url, options?.space);
       try {
-        const response = await axiosInstance.post(url, data, { 
+        const response = await axiosInstance.post(spaceAwareUrl, data, { 
           headers: { ...axiosConfig.headers, ...options?.headers }
         });
         return response;
@@ -103,9 +113,10 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
         );
       }
     },
-    put: async (url: string, data?: any, options?: { headers?: any }) => {
+    put: async (url: string, data?: any, options?: { headers?: any; space?: string }) => {
+      const spaceAwareUrl = buildSpaceAwareUrl(url, options?.space);
       try {
-        const response = await axiosInstance.put(url, data, { 
+        const response = await axiosInstance.put(spaceAwareUrl, data, { 
           headers: { ...axiosConfig.headers, ...options?.headers }
         });
         return response;
@@ -118,9 +129,10 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
         );
       }
     },
-    delete: async (url: string, options?: { headers?: any }) => {
+    delete: async (url: string, options?: { headers?: any; space?: string }) => {
+      const spaceAwareUrl = buildSpaceAwareUrl(url, options?.space);
       try {
-        const response = await axiosInstance.delete(url, { 
+        const response = await axiosInstance.delete(spaceAwareUrl, { 
           headers: { ...axiosConfig.headers, ...options?.headers }
         });
         return response;
@@ -133,9 +145,10 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
         );
       }
     },
-    patch: async (url: string, data?: any, options?: { headers?: any }) => {
+    patch: async (url: string, data?: any, options?: { headers?: any; space?: string }) => {
+      const spaceAwareUrl = buildSpaceAwareUrl(url, options?.space);
       try {
-        const response = await axiosInstance.patch(url, data, { 
+        const response = await axiosInstance.patch(spaceAwareUrl, data, { 
           headers: { ...axiosConfig.headers, ...options?.headers }
         });
         return response;
@@ -165,11 +178,12 @@ interface DashboardPanelParams {
 
 // Create Kibana MCP server
 export async function createKibanaMcpServer(options: ServerCreationOptions): Promise<McpServer> {
-  const { name, version, transport, config } = options;
+  const { name, version, transport, config, description } = options;
 
   // Validate configuration
   const validatedConfig = KibanaConfigSchema.parse(config);
   const kibanaClient = createKibanaClient(validatedConfig);
+  const defaultSpace = validatedConfig.defaultSpace || 'default';
 
   const server = new McpServer({
     name,
@@ -179,7 +193,8 @@ export async function createKibanaMcpServer(options: ServerCreationOptions): Pro
       tools: {},
       prompts: { listChanged: false },
       resources: {}
-    }
+    },
+    description
   });
 
   // Create an adapter to convert McpServer to ServerBase
@@ -266,9 +281,9 @@ export async function createKibanaMcpServer(options: ServerCreationOptions): Pro
 
   // Register all tool modules
   const registrations = [
-    registerBaseTools(serverBase, kibanaClient),
-    registerPrompts(serverBase),
-    registerResources(serverBase, kibanaClient)
+    registerBaseTools(serverBase, kibanaClient, defaultSpace),
+    registerPrompts(serverBase, defaultSpace),
+    registerResources(serverBase, kibanaClient, defaultSpace)
   ];
 
   await Promise.all(registrations);
@@ -287,13 +302,26 @@ async function main() {
       caCert: process.env.KIBANA_CA_CERT,
       timeout: parseInt(process.env.KIBANA_TIMEOUT || "30000", 10),
       maxRetries: parseInt(process.env.KIBANA_MAX_RETRIES || "3", 10),
+      defaultSpace: process.env.KIBANA_SPACE || 'default'
     };
 
+    // 根据空间动态构建服务器名称和描述
+    const defaultSpace = config.defaultSpace || 'default';
+    const serverName = "kibana-mcp-server";
+    const serverDescription = defaultSpace === 'default' 
+      ? "Kibana MCP Server with multi-space support"
+      : `Kibana MCP Server with multi-space support (default: '${defaultSpace}')`;
+
+    // 使用 stderr 而不是 stdout
+    process.stderr.write(`Starting Kibana MCP Server for space: ${defaultSpace}\n`);
+    
     // Create and connect server
     const server = await createKibanaMcpServer({
-      name: "kibana-mcp-server",
+      name: serverName,
       version: "0.1.3",
       config,
+      // 添加描述信息
+      description: serverDescription
     });
 
     // Connect transport

@@ -92,6 +92,7 @@ env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 - Connect to local or remote Kibana instances
 - Secure authentication (username/password)
 - SSL/TLS and custom CA certificate support
+- Multi-space support for enterprise Kibana environments
 - Exposes Kibana API endpoints as both tools and resources
 - Search, view, and execute Kibana APIs from MCP clients
 - Type-safe, extensible, and easy to integrate
@@ -131,8 +132,9 @@ env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 
 | Tool Name                   | Description                                        | Input Parameters                                                    |
 |-----------------------------|----------------------------------------------------|---------------------------------------------------------------------|
-| `get_status`                | Get the current status of the Kibana server        | None                                                                |
-| `execute_api`               | Execute a custom Kibana API request                | `method` (GET/POST/PUT/DELETE), `path` (string), `body` (optional), `params` (optional) |
+| `get_status`                | Get the current status of the Kibana server        | `space` (optional string) - Target Kibana space                    |
+| `execute_api`               | Execute a custom Kibana API request                | `method` (GET/POST/PUT/DELETE), `path` (string), `body` (optional), `params` (optional), `space` (optional string) |
+| `get_available_spaces`      | Get available Kibana spaces and current context    | `include_details` (optional boolean) - Include full space details  |
 | `search_kibana_api_paths`   | Search Kibana API endpoints by keyword             | `search` (string)                                                   |
 | `list_all_kibana_api_paths` | List all Kibana API endpoints                      | None                                                                |
 | `get_kibana_api_detail`     | Get details for a specific Kibana API endpoint     | `method` (string), `path` (string)                                  |
@@ -157,6 +159,7 @@ Configure the server via environment variables:
 | `KIBANA_URL`                     | Kibana server address (e.g. http://localhost:5601)   | Yes      |
 | `KIBANA_USERNAME`                | Kibana username                                     | Yes      |
 | `KIBANA_PASSWORD`                | Kibana password                                     | Yes      |
+| `KIBANA_SPACE`                   | Target Kibana space (default: 'default')           | No       |
 | `KIBANA_CA_CERT`                 | CA certificate path (optional, for SSL verification) | No       |
 | `KIBANA_TIMEOUT`                 | Request timeout in ms (default 30000)                | No       |
 | `KIBANA_MAX_RETRIES`             | Max request retries (default 3)                      | No       |
@@ -201,14 +204,18 @@ node $(which mcp-server-kibana)
 ## Example Queries
 
 - "What is the status of my Kibana server?"
+- "What is the status of my Kibana server in the 'marketing' space?"
+- "List all available Kibana spaces I can access."
 - "List all available Kibana API endpoints."
 - "Show details for the POST /api/saved_objects/_find endpoint."
 - "Execute a custom API request for /api/status."
 - "Get a list of all dashboards in Kibana."
+- "Get a list of all dashboards in the 'production' space."
 - "Query API endpoints related to endpoint events."
 - "List all case-related API endpoints."
 - "Create a new case in Kibana."
 - "Create a new dashboard in Kibana."
+- "Create a new dashboard in the 'dev-team' space."
 
 ---
 
