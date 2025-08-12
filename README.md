@@ -134,7 +134,7 @@ env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 | Tool Name                   | Description                                        | Input Parameters                                                    |
 |-----------------------------|----------------------------------------------------|---------------------------------------------------------------------|
 | `get_status`                | Get the current status of the Kibana server        | `space` (optional string) - Target Kibana space                    |
-| `execute_api`               | Execute a custom Kibana API request                | `method` (GET/POST/PUT/DELETE), `path` (string), `body` (optional), `params` (optional), `space` (optional string) |
+| `execute_kb_api`            | Execute a custom Kibana API request                | `method` (GET/POST/PUT/DELETE), `path` (string), `body` (optional), `params` (optional), `space` (optional string) |
 | `get_available_spaces`      | Get available Kibana spaces and current context    | `include_details` (optional boolean) - Include full space details  |
 | `search_kibana_api_paths`   | Search Kibana API endpoints by keyword             | `search` (string)                                                   |
 | `list_all_kibana_api_paths` | List all Kibana API endpoints                      | None                                                                |

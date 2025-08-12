@@ -59,7 +59,7 @@
 | 工具名称                    | 描述                                         | 输入参数                                                         |
 |-----------------------------|----------------------------------------------|------------------------------------------------------------------|
 | `get_status`                | 获取 Kibana 服务器当前状态                   | `space` (可选字符串) - 目标 Kibana 空间                         |
-| `execute_api`               | 执行自定义 Kibana API 请求                   | `method` (GET/POST/PUT/DELETE), `path` (字符串), `body` (可选), `params` (可选), `space` (可选字符串) |
+| `execute_kb_api`            | 执行自定义 Kibana API 请求                   | `method` (GET/POST/PUT/DELETE), `path` (字符串), `body` (可选), `params` (可选), `space` (可选字符串) |
 | `get_available_spaces`      | 获取可用的 Kibana 空间和当前上下文           | `include_details` (可选布尔值) - 包含完整空间详情                |
 | `search_kibana_api_paths`   | 按关键字搜索 Kibana API 端点                 | `search` (字符串)                                                |
 | `list_all_kibana_api_paths` | 列出所有 Kibana API 端点                     | 无                                                               |
@@ -175,7 +175,7 @@ npx @tocharian/mcp-server-kibana
 当在 Claude Desktop 中使用本服务器时，支持两种不同的提示词交互模式：
 
 ### 1. 工具模式
-- **工作方式：** Claude Desktop 可直接调用服务器工具（如 `get_status`、`execute_api`、`search_kibana_api_paths` 等）来回答你的问题或执行操作。
+- **工作方式：** Claude Desktop 可直接调用服务器工具（如 `get_status`、`execute_kb_api`、`search_kibana_api_paths` 等）来回答你的问题或执行操作。
 - **适用人群：** 需要对话式、引导式体验的用户。服务器会自动搜索、执行并解释 Kibana API。
 - **示例：** "显示所有与 saved objects 相关的 Kibana API 端点。"
 - **测试建议：** 在 Claude Desktop 选择 `kibana-tool-expert` 提示词进行集成测试，然后开始使用。

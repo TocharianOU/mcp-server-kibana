@@ -318,7 +318,7 @@ async function main() {
     // Create and connect server
     const server = await createKibanaMcpServer({
       name: serverName,
-      version: "0.1.4",
+      version: "0.1.6",
       config,
 
       description: serverDescription
