@@ -106,7 +106,7 @@ npm install @tocharian/mcp-server-kibana
 
 ### 替代方案：从源码安装
 ```bash
-git clone https://github.com/TocharinOU/mcp-server-kibana.git
+git clone https://github.com/TocharianOU/mcp-server-kibana.git
 cd mcp-server-kibana
 npm install
 npm run build
@@ -240,7 +240,7 @@ npm run inspector
 ## 📦 包信息
 
 - **NPM 包**: [@tocharian/mcp-server-kibana](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
-- **GitHub 仓库**: [TocharinOU/mcp-server-kibana](https://github.com/TocharinOU/mcp-server-kibana)
+- **GitHub 仓库**: [TocharianOU/mcp-server-kibana](https://github.com/TocharianOU/mcp-server-kibana)
 - **Node.js 要求**: >= 18.0.0
 - **包大小**: ~685KB (解压后 6.4MB)
 
