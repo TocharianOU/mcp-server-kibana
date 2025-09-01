@@ -10,9 +10,9 @@
   "bin": {
     "mcp-server-kibana": "./dist/index.js"
   },
-  "repository": "https://github.com/TocharinOU/mcp-server-kibana",
-  "bugs": "https://github.com/TocharinOU/mcp-server-kibana/issues",
-  "homepage": "https://github.com/TocharinOU/mcp-server-kibana",
+  "repository": "https://github.com/TocharianOU/mcp-server-kibana",
+  "bugs": "https://github.com/TocharianOU/mcp-server-kibana/issues",
+  "homepage": "https://github.com/TocharianOU/mcp-server-kibana",
   "keywords": [
     "kibana",
     "mcp",
