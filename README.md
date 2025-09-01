@@ -28,7 +28,7 @@ npm install @tocharian/mcp-server-kibana
 
 ### Alternative: From Source
 ```bash
-git clone https://github.com/TocharinOU/mcp-server-kibana.git
+git clone https://github.com/TocharianOU/mcp-server-kibana.git
 cd mcp-server-kibana
 npm install
 npm run build
@@ -171,7 +171,7 @@ Configure the server via environment variables:
 ## 📦 Package Information
 
 - **NPM Package**: [@tocharian/mcp-server-kibana](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
-- **GitHub Repository**: [TocharinOU/mcp-server-kibana](https://github.com/TocharinOU/mcp-server-kibana)
+- **GitHub Repository**: [TocharianOU/mcp-server-kibana](https://github.com/TocharianOU/mcp-server-kibana)
 - **Node.js**: >= 18.0.0
 - **Package Size**: ~685KB (6.4MB unpacked)
 
