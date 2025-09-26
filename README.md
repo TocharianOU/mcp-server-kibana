@@ -39,11 +39,21 @@ npm run build
 ## 🎯 Quick Start
 
 ### Method 1: Direct CLI Usage
+
+#### Using Basic Authentication
 ```bash
 # Set your Kibana credentials and run
 KIBANA_URL=http://your-kibana-server:5601 \
 KIBANA_USERNAME=your-username \
 KIBANA_PASSWORD=your-password \
+npx @tocharian/mcp-server-kibana
+```
+
+#### Using Cookie Authentication
+```bash
+# Set your Kibana session cookies and run
+KIBANA_URL=http://your-kibana-server:5601 \
+KIBANA_COOKIES="sid=your-session-id; security-session=your-security-session" \
 npx @tocharian/mcp-server-kibana
 ```
 
@@ -54,6 +64,7 @@ Add to your Claude Desktop configuration file:
 - **MacOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
+#### Using Basic Authentication
 ```json
 {
   "mcpServers": {
@@ -64,6 +75,24 @@ Add to your Claude Desktop configuration file:
         "KIBANA_URL": "http://your-kibana-server:5601",
         "KIBANA_USERNAME": "your-username",
         "KIBANA_PASSWORD": "your-password",
+        "KIBANA_DEFAULT_SPACE": "default",
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+      }
+    }
+  }
+}
+```
+
+#### Using Cookie Authentication
+```json
+{
+  "mcpServers": {
+    "kibana-mcp-server": {
+      "command": "npx",
+      "args": ["@tocharian/mcp-server-kibana"],
+      "env": {
+        "KIBANA_URL": "http://your-kibana-server:5601",
+        "KIBANA_COOKIES": "sid=your-session-id; security-session=your-security-session",
         "KIBANA_DEFAULT_SPACE": "default",
         "NODE_TLS_REJECT_UNAUTHORIZED": "0"
       }
@@ -91,7 +120,9 @@ env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 ## Features
 
 - Connect to local or remote Kibana instances
-- Secure authentication (username/password)
+- Flexible authentication support:
+  - Cookie-based authentication (recommended for browser sessions)
+  - Basic authentication (username/password)
 - SSL/TLS and custom CA certificate support
 - Multi-space support for enterprise Kibana environments
 - Exposes Kibana API endpoints as both tools and resources
@@ -158,13 +189,16 @@ Configure the server via environment variables:
 | Variable Name                    | Description                                         | Required |
 |----------------------------------|-----------------------------------------------------|----------|
 | `KIBANA_URL`                     | Kibana server address (e.g. http://localhost:5601)   | Yes      |
-| `KIBANA_USERNAME`                | Kibana username                                     | Yes      |
-| `KIBANA_PASSWORD`                | Kibana password                                     | Yes      |
+| `KIBANA_USERNAME`                | Kibana username (for basic auth)                   | No*      |
+| `KIBANA_PASSWORD`                | Kibana password (for basic auth)                   | No*      |
+| `KIBANA_COOKIES`                 | Kibana session cookies (for cookie auth)           | No*      |
 | `KIBANA_DEFAULT_SPACE`           | Default Kibana space (default: 'default')          | No       |
 | `KIBANA_CA_CERT`                 | CA certificate path (optional, for SSL verification) | No       |
 | `KIBANA_TIMEOUT`                 | Request timeout in ms (default 30000)                | No       |
 | `KIBANA_MAX_RETRIES`             | Max request retries (default 3)                      | No       |
 | `NODE_TLS_REJECT_UNAUTHORIZED`   | Set to `0` to disable SSL certificate validation (use with caution) | No |
+
+*Either `KIBANA_COOKIES` or both `KIBANA_USERNAME` and `KIBANA_PASSWORD` must be provided for authentication.
 
 ---
 

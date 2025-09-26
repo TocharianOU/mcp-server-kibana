@@ -35,12 +35,14 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
     },
   };
 
-  // Add authentication
+  // Add authentication - prioritize basic auth over cookies
   if (config.username && config.password) {
     axiosConfig.auth = {
       username: config.username,
       password: config.password,
     };
+  } else if (config.cookies) {
+    axiosConfig.headers['Cookie'] = config.cookies;
   }
 
   // Add CA certificate
@@ -299,6 +301,7 @@ async function main() {
       url: process.env.KIBANA_URL || "http://localhost:5601",
       username: process.env.KIBANA_USERNAME || "",
       password: process.env.KIBANA_PASSWORD || "",
+      cookies: process.env.KIBANA_COOKIES,
       caCert: process.env.KIBANA_CA_CERT,
       timeout: parseInt(process.env.KIBANA_TIMEOUT || "30000", 10),
       maxRetries: parseInt(process.env.KIBANA_MAX_RETRIES || "3", 10),
