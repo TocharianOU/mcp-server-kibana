@@ -24,6 +24,7 @@ export const KibanaConfigSchema = z.object({
   url: z.string().trim().min(1, "Kibana URL cannot be empty").url("Invalid Kibana URL format"),
   username: z.string().optional(),
   password: z.string().optional(),
+  cookies: z.string().optional(),
   caCert: z.string().optional(),
   timeout: z.number().optional().default(30000),
   maxRetries: z.number().optional().default(3),
