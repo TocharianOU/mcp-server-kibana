@@ -120,7 +120,7 @@ env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 ## Features
 
 - Connect to local or remote Kibana instances
-- Flexible authentication support:
+- **Dual authentication support**:
   - Cookie-based authentication (recommended for browser sessions)
   - Basic authentication (username/password)
 - SSL/TLS and custom CA certificate support
