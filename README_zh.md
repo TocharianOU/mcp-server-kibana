@@ -17,6 +17,9 @@
 
 ### 核心功能
 - 支持连接本地或远程 Kibana 实例
+- **双传输模式**：
+  - **Stdio 传输**（默认）- 用于 Claude Desktop 和本地 MCP 客户端
+  - **Streamable HTTP 传输**（v0.4.0 新增）- 用于远程访问、API 集成和 Web 应用
 - **双重认证支持**：
   - Cookie 认证（推荐用于浏览器会话）
   - 基本认证（用户名/密码）
@@ -25,6 +28,8 @@
 - 以工具和资源两种方式暴露 Kibana API 端点
 - 支持 MCP 客户端搜索、查看、执行 Kibana API
 - 类型安全、可扩展、易集成
+- **会话管理** - HTTP 模式下自动生成 UUID
+- **健康检查端点** - 用于监控和负载均衡
 
 ### 可视化层 (VL) 功能
 - **完整的 CRUD 操作** - 支持 Kibana 保存对象的增删改查
@@ -111,16 +116,31 @@
 
 通过环境变量配置服务器：
 
+### Kibana 连接设置
 | 变量名                          | 描述                                         | 是否必需 |
 |----------------------------------|----------------------------------------------|----------|
 | `KIBANA_URL`                     | Kibana 服务器地址（如 http://localhost:5601） | 是       |
-| `KIBANA_USERNAME`                | Kibana 用户名                                | 是       |
-| `KIBANA_PASSWORD`                | Kibana 密码                                  | 是       |
+| `KIBANA_USERNAME`                | Kibana 用户名（用于基本认证）                | 否*      |
+| `KIBANA_PASSWORD`                | Kibana 密码（用于基本认证）                  | 否*      |
+| `KIBANA_COOKIES`                 | Kibana 会话 cookies（用于 cookie 认证）      | 否*      |
 | `KIBANA_DEFAULT_SPACE`           | 默认 Kibana 空间（默认: 'default'）           | 否       |
 | `KIBANA_CA_CERT`                 | CA 证书路径（可选，用于 SSL 验证）           | 否       |
 | `KIBANA_TIMEOUT`                 | 请求超时时间（毫秒，默认 30000）             | 否       |
 | `KIBANA_MAX_RETRIES`             | 最大请求重试次数（默认 3）                   | 否       |
 | `NODE_TLS_REJECT_UNAUTHORIZED`   | 设为 `0` 可禁用 SSL 证书校验（谨慎使用）     | 否       |
+
+*必须提供 `KIBANA_COOKIES` 或 `KIBANA_USERNAME` 和 `KIBANA_PASSWORD` 之一用于认证。
+
+### 传输模式设置（v0.4.0 新增）
+| 变量名          | 描述                                    | 默认值      | 可选值          |
+|-----------------|----------------------------------------|------------|-----------------|
+| `MCP_TRANSPORT` | 传输模式选择                            | `stdio`    | `stdio`, `http` |
+| `MCP_HTTP_PORT` | HTTP 服务器端口（使用 HTTP 传输时）     | `3000`     | 1-65535         |
+| `MCP_HTTP_HOST` | HTTP 服务器主机（使用 HTTP 传输时）     | `localhost`| 任意有效主机     |
+
+**传输模式详解：**
+- **Stdio 模式**（默认）：用于 Claude Desktop 和本地 MCP 客户端
+- **HTTP 模式**：作为独立 HTTP 服务器运行，支持远程访问、API 集成和 Web 应用
 
 ---
 
@@ -179,6 +199,71 @@ npx @tocharian/mcp-server-kibana
     }
   }
 }
+```
+
+### 方法 3: Streamable HTTP 模式（v0.4.0 新增）
+
+将服务器作为独立的 HTTP 服务运行，支持远程访问和 API 集成：
+
+```bash
+# 启动 HTTP 服务器（默认端口 3000）
+MCP_TRANSPORT=http \
+KIBANA_URL=http://your-kibana-server:5601 \
+KIBANA_USERNAME=your-username \
+KIBANA_PASSWORD=your-password \
+npx @tocharian/mcp-server-kibana
+
+# 或使用自定义端口和主机
+MCP_TRANSPORT=http \
+MCP_HTTP_PORT=9000 \
+MCP_HTTP_HOST=0.0.0.0 \
+KIBANA_URL=http://your-kibana-server:5601 \
+KIBANA_USERNAME=your-username \
+KIBANA_PASSWORD=your-password \
+npx @tocharian/mcp-server-kibana
+```
+
+**HTTP 模式特性：**
+- 在 `http://host:port/mcp` 端点暴露 MCP 服务器
+- 在 `http://host:port/health` 提供健康检查
+- 基于会话的连接管理
+- 支持 POST（JSON-RPC 请求）和 GET（SSE 流）
+- 兼容任何 HTTP 客户端或 MCP SDK
+
+**HTTP 客户端使用示例：**
+```javascript
+// 初始化连接
+const response = await fetch('http://localhost:3000/mcp', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'initialize',
+    params: {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: 'my-client', version: '1.0.0' }
+    },
+    id: 1
+  })
+});
+
+const sessionId = response.headers.get('mcp-session-id');
+
+// 后续请求需包含 session ID
+const toolsResponse = await fetch('http://localhost:3000/mcp', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'mcp-session-id': sessionId
+  },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'tools/list',
+    params: {},
+    id: 2
+  })
+});
 ```
 
 ---
@@ -248,6 +333,22 @@ npm run build
 
 ```bash
 npm run watch
+```
+
+以不同模式运行：
+
+```bash
+# Stdio 模式（默认）
+npm start
+
+# HTTP 模式
+npm run start:http
+
+# TypeScript 开发模式
+npm run start:ts
+
+# HTTP 模式 TypeScript 开发
+npm run start:http:ts
 ```
 
 ---
