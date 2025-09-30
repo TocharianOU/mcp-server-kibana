@@ -115,12 +115,80 @@ EOF
 env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 ```
 
+### Method 4: Streamable HTTP Mode (NEW in v0.4.0)
+
+Run the server as a standalone HTTP service for remote access and API integration:
+
+```bash
+# Start HTTP server (default port 3000)
+MCP_TRANSPORT=http \
+KIBANA_URL=http://your-kibana-server:5601 \
+KIBANA_USERNAME=your-username \
+KIBANA_PASSWORD=your-password \
+npx @tocharian/mcp-server-kibana
+
+# Or with custom port and host
+MCP_TRANSPORT=http \
+MCP_HTTP_PORT=9000 \
+MCP_HTTP_HOST=0.0.0.0 \
+KIBANA_URL=http://your-kibana-server:5601 \
+KIBANA_USERNAME=your-username \
+KIBANA_PASSWORD=your-password \
+npx @tocharian/mcp-server-kibana
+```
+
+**HTTP Mode Features:**
+- Exposes MCP server at `http://host:port/mcp` endpoint
+- Health check available at `http://host:port/health`
+- Session-based connection management
+- Supports both POST (JSON-RPC requests) and GET (SSE streams)
+- Compatible with any HTTP client or MCP SDK
+
+**Example HTTP client usage:**
+```javascript
+// Initialize connection
+const response = await fetch('http://localhost:3000/mcp', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'initialize',
+    params: {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: 'my-client', version: '1.0.0' }
+    },
+    id: 1
+  })
+});
+
+const sessionId = response.headers.get('mcp-session-id');
+
+// Subsequent requests include session ID
+const toolsResponse = await fetch('http://localhost:3000/mcp', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'mcp-session-id': sessionId
+  },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'tools/list',
+    params: {},
+    id: 2
+  })
+});
+```
+
 ---
 
 ## Features
 
 ### Core Features
 - Connect to local or remote Kibana instances
+- **Dual transport modes**:
+  - **Stdio transport** (default) - For Claude Desktop and local MCP clients
+  - **Streamable HTTP transport** (NEW in v0.4.0) - For remote access, API integration, and web applications
 - **Dual authentication support**:
   - Cookie-based authentication (recommended for browser sessions)
   - Basic authentication (username/password)
@@ -129,6 +197,8 @@ env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 - Exposes Kibana API endpoints as both tools and resources
 - Search, view, and execute Kibana APIs from MCP clients
 - Type-safe, extensible, and easy to integrate
+- **Session management** with automatic UUID generation for HTTP mode
+- **Health check endpoint** for monitoring and load balancing
 
 ### Visualization Layer (VL) Features
 - **Complete CRUD operations** for Kibana saved objects
@@ -215,6 +285,7 @@ env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 
 Configure the server via environment variables:
 
+### Kibana Connection Settings
 | Variable Name                    | Description                                         | Required |
 |----------------------------------|-----------------------------------------------------|----------|
 | `KIBANA_URL`                     | Kibana server address (e.g. http://localhost:5601)   | Yes      |
@@ -228,6 +299,17 @@ Configure the server via environment variables:
 | `NODE_TLS_REJECT_UNAUTHORIZED`   | Set to `0` to disable SSL certificate validation (use with caution) | No |
 
 *Either `KIBANA_COOKIES` or both `KIBANA_USERNAME` and `KIBANA_PASSWORD` must be provided for authentication.
+
+### Transport Mode Settings (NEW in v0.4.0)
+| Variable Name     | Description                                    | Default   | Values          |
+|-------------------|------------------------------------------------|-----------|-----------------|
+| `MCP_TRANSPORT`   | Transport mode selection                       | `stdio`   | `stdio`, `http` |
+| `MCP_HTTP_PORT`   | HTTP server port (when using HTTP transport)   | `3000`    | 1-65535         |
+| `MCP_HTTP_HOST`   | HTTP server host (when using HTTP transport)   | `localhost` | Any valid host  |
+
+**Transport Mode Details:**
+- **Stdio mode** (default): For Claude Desktop and local MCP clients
+- **HTTP mode**: Runs as a standalone HTTP server for remote access, API integration, and web applications
 
 ---
 
@@ -330,6 +412,22 @@ Auto-rebuild in development mode:
 
 ```bash
 npm run watch
+```
+
+Run in different modes:
+
+```bash
+# Stdio mode (default)
+npm start
+
+# HTTP mode
+npm run start:http
+
+# Development with TypeScript
+npm run start:ts
+
+# HTTP mode with TypeScript
+npm run start:http:ts
 ```
 
 ---
