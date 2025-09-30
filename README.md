@@ -119,6 +119,7 @@ env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 
 ## Features
 
+### Core Features
 - Connect to local or remote Kibana instances
 - **Dual authentication support**:
   - Cookie-based authentication (recommended for browser sessions)
@@ -128,6 +129,16 @@ env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 - Exposes Kibana API endpoints as both tools and resources
 - Search, view, and execute Kibana APIs from MCP clients
 - Type-safe, extensible, and easy to integrate
+
+### Visualization Layer (VL) Features
+- **Complete CRUD operations** for Kibana saved objects
+- **Universal saved object management** - works with all object types
+- **Intelligent parameter handling** - supports multiple input formats (arrays, JSON strings, comma-separated)
+- **Optimized search** with pagination support and performance tips
+- **Bulk operations** for efficient mass updates and deletions
+- **Version control** with optimistic concurrency for safe updates
+- **Reference management** for object relationships
+- **Multi-format type support** - flexible input parsing for better UX
 
 ---
 
@@ -139,7 +150,12 @@ env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 │   ├── types.ts            # Type definitions and schemas
 │   ├── base-tools.ts       # Tool registration and API logic
 │   ├── prompts.ts          # Prompt registration (expert & resource helper)
-│   └── resources.ts        # Resource registration (API paths/URIs)
+│   ├── resources.ts        # Resource registration (API paths/URIs)
+│   ├── vl_search_tools.ts  # Visualization Layer - Search tools
+│   ├── vl_get_tools.ts     # Visualization Layer - Get tools
+│   ├── vl_create_tools.ts  # Visualization Layer - Create tools
+│   ├── vl_update_tools.ts  # Visualization Layer - Update tools
+│   └── vl_delete_tools.ts  # Visualization Layer - Delete tools
 ├── kibana-openapi-source.yaml # Kibana API OpenAPI index
 ├── README.md               # English documentation
 ├── README_zh.md            # Chinese documentation
@@ -162,6 +178,7 @@ env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 
 ## Tools
 
+### Base Tools
 | Tool Name                   | Description                                        | Input Parameters                                                    |
 |-----------------------------|----------------------------------------------------|---------------------------------------------------------------------|
 | `get_status`                | Get the current status of the Kibana server        | `space` (optional string) - Target Kibana space                    |
@@ -170,6 +187,18 @@ env $(cat kibana-mcp.env | xargs) npx @tocharian/mcp-server-kibana
 | `search_kibana_api_paths`   | Search Kibana API endpoints by keyword             | `search` (string)                                                   |
 | `list_all_kibana_api_paths` | List all Kibana API endpoints                      | None                                                                |
 | `get_kibana_api_detail`     | Get details for a specific Kibana API endpoint     | `method` (string), `path` (string)                                  |
+
+### Visualization Layer (VL) Tools - Saved Objects Management
+| Tool Name                      | Description                                        | Input Parameters                                                    |
+|--------------------------------|----------------------------------------------------|---------------------------------------------------------------------|
+| `vl_search_saved_objects`      | Search for Kibana saved objects (universal)       | `types` (required array), `search` (optional), `fields` (optional), `perPage` (optional), `page` (optional), `space` (optional) |
+| `vl_get_saved_object`          | Get a single saved object by type and ID          | `type` (required), `id` (required), `useResolve` (optional), `space` (optional) |
+| `vl_create_saved_object`       | Create a new saved object (universal)             | `type` (required), `attributes` (required), `id` (optional), `overwrite` (optional), `references` (optional), `space` (optional) |
+| `vl_update_saved_object`       | Update a single saved object                      | `type` (required), `id` (required), `attributes` (required), `references` (optional), `version` (optional), `space` (optional) |
+| `vl_bulk_update_saved_objects` | Update multiple saved objects in bulk             | `objects` (required array), `space` (optional) |
+| `vl_bulk_delete_saved_objects` | Delete multiple saved objects in bulk             | `objects` (required array), `force` (optional), `space` (optional) |
+
+**Supported Saved Object Types:** `dashboard`, `visualization`, `index-pattern`, `search`, `config`, `lens`, `map`, `tag`, `canvas-workpad`, `canvas-element`
 
 ---
 
@@ -238,19 +267,27 @@ node $(which mcp-server-kibana)
 
 ## Example Queries
 
+### Basic Queries
 - "What is the status of my Kibana server?"
 - "What is the status of my Kibana server in the 'marketing' space?"
 - "List all available Kibana spaces I can access."
 - "List all available Kibana API endpoints."
 - "Show details for the POST /api/saved_objects/_find endpoint."
 - "Execute a custom API request for /api/status."
-- "Get a list of all dashboards in Kibana."
-- "Get a list of all dashboards in the 'production' space."
-- "Query API endpoints related to endpoint events."
-- "List all case-related API endpoints."
-- "Create a new case in Kibana."
-- "Create a new dashboard in Kibana."
-- "Create a new dashboard in the 'dev-team' space."
+
+### Saved Objects Management
+- "Search for all dashboards in Kibana"
+- "Find visualizations containing 'nginx' in the title"
+- "Get dashboard with ID 'my-dashboard-123'"
+- "Create a new dashboard with title 'Sales Overview'"
+- "Update the description of visualization 'viz-456'"
+- "Delete multiple old dashboards by their IDs"
+- "Search for lens visualizations in the 'analytics' space"
+- "Find all canvas workpads created this month"
+- "Get the first 10 index patterns with only title and description fields"
+- "Bulk update multiple dashboard titles"
+- "Search across multiple object types: dashboards and visualizations"
+- "Create a new index pattern for 'logs-*' with timestamp field"
 
 ---
 
@@ -259,9 +296,9 @@ node $(which mcp-server-kibana)
 When using this server with Claude Desktop, two different prompt interaction modes are supported:
 
 ### 1. Tool-based Prompt Mode
-- **How it works:** Claude Desktop can directly call server tools (such as `get_status`, `execute_api`, `search_kibana_api_paths`, etc.) to answer your questions or perform actions.
-- **Best for:** Users who want a conversational, guided experience. The server will automatically search, execute, and explain Kibana APIs.
-- **Example:** "Show all Kibana API endpoints related to saved objects."
+- **How it works:** Claude Desktop can directly call server tools (including base tools like `get_status`, `execute_api`, and VL tools like `vl_search_saved_objects`, `vl_create_saved_object`) to answer your questions or perform actions.
+- **Best for:** Users who want a conversational, guided experience. The server will automatically search, execute, and explain Kibana APIs and manage saved objects.
+- **Example:** "Show all dashboards containing 'sales'" or "Create a new visualization for web analytics"
 - **Testing tip:** Select the `kibana-tool-expert` prompt in Claude Desktop for integration testing, then start using it.
 
 ### 2. Resource-based Prompt Mode
