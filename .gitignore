@@ -41,3 +41,7 @@ tmp/
 scripts/*.log
 
 .cur*PR-5-REVIEW-REPORT.md
+
+# 内部开发文档和规范（不同步到 GitHub）
+PARAMETER_FORMAT_STANDARDS.md
+VL_TOOLS_TODO.md

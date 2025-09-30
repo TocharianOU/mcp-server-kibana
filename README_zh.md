@@ -15,6 +15,7 @@
 
 ## 功能特性
 
+### 核心功能
 - 支持连接本地或远程 Kibana 实例
 - **双重认证支持**：
   - Cookie 认证（推荐用于浏览器会话）
@@ -24,6 +25,16 @@
 - 以工具和资源两种方式暴露 Kibana API 端点
 - 支持 MCP 客户端搜索、查看、执行 Kibana API
 - 类型安全、可扩展、易集成
+
+### 可视化层 (VL) 功能
+- **完整的 CRUD 操作** - 支持 Kibana 保存对象的增删改查
+- **通用保存对象管理** - 支持所有对象类型
+- **智能参数处理** - 支持多种输入格式（数组、JSON 字符串、逗号分隔）
+- **优化搜索** - 支持分页和性能提示
+- **批量操作** - 高效的批量更新和删除
+- **版本控制** - 乐观并发控制确保安全更新
+- **引用管理** - 对象关系管理
+- **多格式类型支持** - 灵活的输入解析提升用户体验
 
 ---
 
@@ -35,7 +46,12 @@
 │   ├── types.ts            # 类型定义与 schema
 │   ├── base-tools.ts       # 工具注册与 API 逻辑
 │   ├── prompts.ts          # 提示词注册（专家 & 资源助手）
-│   └── resources.ts        # 资源注册（API 路径/URI）
+│   ├── resources.ts        # 资源注册（API 路径/URI）
+│   ├── vl_search_tools.ts  # 可视化层 - 搜索工具
+│   ├── vl_get_tools.ts     # 可视化层 - 获取工具
+│   ├── vl_create_tools.ts  # 可视化层 - 创建工具
+│   ├── vl_update_tools.ts  # 可视化层 - 更新工具
+│   └── vl_delete_tools.ts  # 可视化层 - 删除工具
 ├── kibana-openapi-source.yaml # Kibana API OpenAPI 索引
 ├── README.md               # 英文文档
 ├── README_zh.md            # 中文文档
@@ -58,6 +74,7 @@
 
 ## 工具
 
+### 基础工具
 | 工具名称                    | 描述                                         | 输入参数                                                         |
 |-----------------------------|----------------------------------------------|------------------------------------------------------------------|
 | `get_status`                | 获取 Kibana 服务器当前状态                   | `space` (可选字符串) - 目标 Kibana 空间                         |
@@ -66,6 +83,18 @@
 | `search_kibana_api_paths`   | 按关键字搜索 Kibana API 端点                 | `search` (字符串)                                                |
 | `list_all_kibana_api_paths` | 列出所有 Kibana API 端点                     | 无                                                               |
 | `get_kibana_api_detail`     | 获取指定 Kibana API 端点的详细信息           | `method` (字符串), `path` (字符串)                                |
+
+### 可视化层 (VL) 工具 - 保存对象管理
+| 工具名称                      | 描述                                        | 输入参数                                                        |
+|-------------------------------|---------------------------------------------|----------------------------------------------------------------|
+| `vl_search_saved_objects`     | 搜索 Kibana 保存对象（通用）                | `types` (必需数组), `search` (可选), `fields` (可选), `perPage` (可选), `page` (可选), `space` (可选) |
+| `vl_get_saved_object`         | 通过类型和 ID 获取单个保存对象              | `type` (必需), `id` (必需), `useResolve` (可选), `space` (可选) |
+| `vl_create_saved_object`      | 创建新的保存对象（通用）                    | `type` (必需), `attributes` (必需), `id` (可选), `overwrite` (可选), `references` (可选), `space` (可选) |
+| `vl_update_saved_object`      | 更新单个保存对象                           | `type` (必需), `id` (必需), `attributes` (必需), `references` (可选), `version` (可选), `space` (可选) |
+| `vl_bulk_update_saved_objects`| 批量更新多个保存对象                       | `objects` (必需数组), `space` (可选) |
+| `vl_bulk_delete_saved_objects`| 批量删除多个保存对象                       | `objects` (必需数组), `force` (可选), `space` (可选) |
+
+**支持的保存对象类型：** `dashboard`, `visualization`, `index-pattern`, `search`, `config`, `lens`, `map`, `tag`, `canvas-workpad`, `canvas-element`
 
 ---
 
@@ -156,19 +185,27 @@ npx @tocharian/mcp-server-kibana
 
 ## 示例查询
 
+### 基础查询
 - "我的 Kibana 服务器状态如何？"
 - "营销空间中我的 Kibana 服务器状态如何？"
 - "列出我可以访问的所有 Kibana 空间。"
 - "列出所有可用的 Kibana API 端点。"
 - "显示 POST /api/saved_objects/_find 端点的详细信息。"
 - "为 /api/status 执行自定义 API 请求。"
-- "获取 Kibana 中所有仪表盘的列表。"
-- "获取生产空间中所有仪表盘的列表。"
-- "查询与 endpoint events 相关的 API 端点。"
-- "列出所有 case 相关的 API 端点。"
-- "在 Kibana 中创建一个新 case。"
-- "在 Kibana 中创建一个新仪表盘。"
-- "在开发团队空间中创建一个新仪表盘。"
+
+### 保存对象管理
+- "搜索 Kibana 中的所有仪表盘"
+- "查找标题包含 'nginx' 的可视化"
+- "获取 ID 为 'my-dashboard-123' 的仪表盘"
+- "创建标题为 '销售概览' 的新仪表盘"
+- "更新可视化 'viz-456' 的描述"
+- "通过 ID 删除多个旧仪表盘"
+- "在 'analytics' 空间中搜索 lens 可视化"
+- "查找本月创建的所有 canvas 工作区"
+- "获取前 10 个索引模式，只显示标题和描述字段"
+- "批量更新多个仪表盘标题"
+- "跨多种对象类型搜索：仪表盘和可视化"
+- "为 'logs-*' 创建新的索引模式，时间戳字段为 timestamp"
 
 ---
 
@@ -177,9 +214,9 @@ npx @tocharian/mcp-server-kibana
 当在 Claude Desktop 中使用本服务器时，支持两种不同的提示词交互模式：
 
 ### 1. 工具模式
-- **工作方式：** Claude Desktop 可直接调用服务器工具（如 `get_status`、`execute_kb_api`、`search_kibana_api_paths` 等）来回答你的问题或执行操作。
-- **适用人群：** 需要对话式、引导式体验的用户。服务器会自动搜索、执行并解释 Kibana API。
-- **示例：** "显示所有与 saved objects 相关的 Kibana API 端点。"
+- **工作方式：** Claude Desktop 可直接调用服务器工具（包括基础工具如 `get_status`、`execute_kb_api` 和 VL 工具如 `vl_search_saved_objects`、`vl_create_saved_object`）来回答你的问题或执行操作。
+- **适用人群：** 需要对话式、引导式体验的用户。服务器会自动搜索、执行并解释 Kibana API 和管理保存对象。
+- **示例：** "显示所有包含 'sales' 的仪表盘" 或 "创建用于 web 分析的新可视化"
 - **测试建议：** 在 Claude Desktop 选择 `kibana-tool-expert` 提示词进行集成测试，然后开始使用。
 
 ### 2. 资源模式
