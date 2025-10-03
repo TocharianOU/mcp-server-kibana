@@ -182,6 +182,125 @@ const toolsResponse = await fetch('http://localhost:3000/mcp', {
 
 ---
 
+## 🎯 Supported Use Cases
+
+This MCP server enables AI-powered interactions with Kibana across multiple domains:
+
+### 🔐 Security Operations
+- **Detection Engineering** (`dt_*` tools) - Manage security detection rules and alerts
+- **Threat Investigation** (`sc_timeline_*` tools) - Create and analyze security timelines
+- **Exception Management** (`sc_exception_*`, `sc_list_*` tools) - Manage rule exceptions and value lists
+
+### 📊 Observability & Monitoring
+- **Alerting Rules** (`ob_alert_*` tools) - Create and manage observability alerts for metrics, logs, traces, and uptime
+- **Notification Channels** (`ob_action_*` tools) - Configure Slack, Email, PagerDuty, Webhook integrations
+- **SLO Management** (`ob_slo_*` tools) - Define and track Service Level Objectives and error budgets
+
+### 📈 Data Visualization
+- **Saved Objects** (`vl_*` tools) - Manage dashboards, visualizations, and canvas workpads
+- **Data Views** (`dataview_*` tools) - Configure data sources and field mappings
+
+### 🛠️ System Management
+- **API Execution** (`execute_kb_api`) - Execute any Kibana API endpoint
+- **Space Management** - Multi-tenant Kibana space support
+- **Health Monitoring** - Check system status and API availability
+
+---
+
+## ⚙️ Tool Selection Guide
+
+This server provides **87 specialized tools** to enable precise control for AI models. However, **not all tools are required for every use case**.
+
+### 🎯 For High-Capability Models (GPT-4, Claude 3.5 Sonnet, etc.)
+
+**Recommended Configuration**: Use **base tools only** (6 tools)
+
+High-capability models can intelligently use the flexible `execute_kb_api` tool to access any Kibana API:
+
+```json
+{
+  "mcpServers": {
+    "kibana-mcp-server": {
+      "command": "npx",
+      "args": ["@tocharian/mcp-server-kibana"],
+      "env": {
+        "KIBANA_URL": "http://your-kibana-server:5601",
+        "KIBANA_USERNAME": "your-username",
+        "KIBANA_PASSWORD": "your-password"
+      }
+    }
+  }
+}
+```
+
+**Benefits**:
+- ✅ Faster tool loading and execution
+- ✅ Lower memory footprint
+- ✅ Cleaner tool list for AI model
+- ✅ Full API access via `execute_kb_api`
+
+**Base Tools** (Always Available):
+- `get_status` - Get Kibana server status
+- `execute_kb_api` - Execute any Kibana API (universal tool)
+- `get_available_spaces` - List Kibana spaces
+- `search_kibana_api_paths` - Search API endpoints
+- `list_all_kibana_api_paths` - List all API endpoints
+- `get_kibana_api_detail` - Get API endpoint details
+
+---
+
+### 🔧 For Lower-Capability Models or Specific Use Cases
+
+**Recommended Configuration**: Enable **domain-specific tools** based on your needs
+
+The specialized tools (`vl_*`, `dt_*`, `sc_*`, `ob_*`, `dataview_*`) provide clear, purpose-specific interfaces that help lower-capability models understand and execute operations correctly.
+
+**Choose your toolset**:
+
+```bash
+# Security Operations Focus
+# Enable: base-tools + dt_* + sc_* (Security Detection & Timeline)
+# 6 base + 27 detection + 43 security = 76 tools
+
+# Observability Focus  
+# Enable: base-tools + ob_* + dataview_* (Alerting & Monitoring)
+# 6 base + 14 alerting + 8 connectors + 7 SLO + 11 dataview = 46 tools
+
+# Visualization Focus
+# Enable: base-tools + vl_* + dataview_* (Dashboards & Saved Objects)
+# 6 base + 6 visualization + 11 dataview = 23 tools
+
+# Full Suite (All Features)
+# All 87 tools enabled (default configuration)
+```
+
+**Benefits of Specialized Tools**:
+- ✅ Clear tool names and descriptions
+- ✅ Explicit parameter validation
+- ✅ Better AI model comprehension
+- ✅ Reduced error rates for complex operations
+
+---
+
+### 💡 Performance Optimization Tips
+
+1. **Start Minimal, Expand as Needed**
+   - Begin with base tools only
+   - Add specialized tools if the model struggles with complex API calls
+   - Monitor tool usage patterns in your AI application
+
+2. **Domain-Specific Deployments**
+   - Security team: Enable only `dt_*` + `sc_*` tools
+   - SRE team: Enable only `ob_*` + `dataview_*` tools
+   - Analytics team: Enable only `vl_*` + `dataview_*` tools
+
+3. **Custom Tool Filtering** (Advanced)
+   - Fork this repository and comment out unused tool registrations in `index.ts`
+   - Build a custom version with only your required tools
+   - Reduces initialization time and memory usage
+
+---
+
 ## Features
 
 ### Core Features
@@ -195,40 +314,64 @@ const toolsResponse = await fetch('http://localhost:3000/mcp', {
 - SSL/TLS and custom CA certificate support
 - Multi-space support for enterprise Kibana environments
 - Exposes Kibana API endpoints as both tools and resources
-- Search, view, and execute Kibana APIs from MCP clients
+- **87 specialized tools** organized by domain (Security, Observability, Visualization, Data)
+- **Flexible tool selection** - use all tools or just base tools depending on AI model capability
 - Type-safe, extensible, and easy to integrate
 - **Session management** with automatic UUID generation for HTTP mode
 - **Health check endpoint** for monitoring and load balancing
 
-### Visualization Layer (VL) Features
-- **Complete CRUD operations** for Kibana saved objects
-- **Universal saved object management** - works with all object types
-- **Intelligent parameter handling** - supports multiple input formats (arrays, JSON strings, comma-separated)
-- **Optimized search** with pagination support and performance tips
-- **Bulk operations** for efficient mass updates and deletions
-- **Version control** with optimistic concurrency for safe updates
-- **Reference management** for object relationships
-- **Multi-format type support** - flexible input parsing for better UX
+### Tool Categories (87 Total)
+
+#### Base Tools (6 tools)
+- Universal API execution and system management
+- **Recommended for all deployments**
+
+#### Visualization Layer - VL Tools (6 tools)
+- Complete CRUD operations for Kibana saved objects
+- Universal saved object management (dashboards, visualizations, etc.)
+- Intelligent parameter handling with multiple input formats
+- Bulk operations for efficient mass updates
+
+#### Detection Engine - DT Tools (27 tools)
+- Security detection rule management
+- Alert signal tracking and investigation
+- Bulk operations and rule import/export
+- Detection privileges and index management
+
+#### Security - SC Tools (43 tools)
+- Timeline investigation (12 tools)
+- Exception list management (14 tools)
+- Value list operations (17 tools)
+
+#### Observability - OB Tools (29 tools) 🆕
+- **Alerting rules** (14 tools) - Metrics, logs, traces, uptime alerts
+- **Connectors/Actions** (8 tools) - Slack, Email, PagerDuty, Webhook integrations
+- **SLO Management** (7 tools) - Service Level Objectives and error budgets
+
+#### Data Views Tools (11 tools)
+- Data source configuration and field mapping
+- Runtime field management
+- Default data view settings
 
 ---
 
 ## Directory Structure
 
 ```
-├── index.ts                # Server entry point
+├── index.ts                    # Server entry point & tool registration
 ├── src/
-│   ├── types.ts            # Type definitions and schemas
-│   ├── base-tools.ts       # Tool registration and API logic
-│   ├── prompts.ts          # Prompt registration (expert & resource helper)
-│   ├── resources.ts        # Resource registration (API paths/URIs)
-│   ├── vl_search_tools.ts  # Visualization Layer - Search tools
-│   ├── vl_get_tools.ts     # Visualization Layer - Get tools
-│   ├── vl_create_tools.ts  # Visualization Layer - Create tools
-│   ├── vl_update_tools.ts  # Visualization Layer - Update tools
-│   └── vl_delete_tools.ts  # Visualization Layer - Delete tools
-├── kibana-openapi-source.yaml # Kibana API OpenAPI index
-├── README.md               # English documentation
-├── README_zh.md            # Chinese documentation
+│   ├── types.ts                # Type definitions and schemas
+│   ├── base-tools.ts           # Base tools (6 tools)
+│   ├── prompts.ts              # Prompt templates
+│   ├── resources.ts            # Resource endpoints
+│   ├── vl_*.ts                 # Visualization Layer tools (6 tools)
+│   ├── dt_*.ts                 # Detection Engine tools (27 tools)
+│   ├── sc_*.ts                 # Security tools (43 tools)
+│   ├── ob_*.ts                 # Observability tools (29 tools) 🆕
+│   └── dataview_tools.ts       # Data View tools (11 tools)
+├── kibana-openapi-source.yaml  # Kibana API OpenAPI specification
+├── README.md                   # English documentation
+└── README_zh.md                # Chinese documentation
 ```
 
 ---
@@ -258,17 +401,56 @@ const toolsResponse = await fetch('http://localhost:3000/mcp', {
 | `list_all_kibana_api_paths` | List all Kibana API endpoints                      | None                                                                |
 | `get_kibana_api_detail`     | Get details for a specific Kibana API endpoint     | `method` (string), `path` (string)                                  |
 
-### Visualization Layer (VL) Tools - Saved Objects Management
-| Tool Name                      | Description                                        | Input Parameters                                                    |
-|--------------------------------|----------------------------------------------------|---------------------------------------------------------------------|
-| `vl_search_saved_objects`      | Search for Kibana saved objects (universal)       | `types` (required array), `search` (optional), `fields` (optional), `perPage` (optional), `page` (optional), `space` (optional) |
-| `vl_get_saved_object`          | Get a single saved object by type and ID          | `type` (required), `id` (required), `useResolve` (optional), `space` (optional) |
-| `vl_create_saved_object`       | Create a new saved object (universal)             | `type` (required), `attributes` (required), `id` (optional), `overwrite` (optional), `references` (optional), `space` (optional) |
-| `vl_update_saved_object`       | Update a single saved object                      | `type` (required), `id` (required), `attributes` (required), `references` (optional), `version` (optional), `space` (optional) |
-| `vl_bulk_update_saved_objects` | Update multiple saved objects in bulk             | `objects` (required array), `space` (optional) |
-| `vl_bulk_delete_saved_objects` | Delete multiple saved objects in bulk             | `objects` (required array), `force` (optional), `space` (optional) |
+### Specialized Tools by Category
+
+**Note**: The following specialized tools are designed to help lower-capability AI models. High-capability models (GPT-4, Claude 3.5 Sonnet) can achieve the same results using only the `execute_kb_api` base tool.
+
+#### Visualization Layer (VL) Tools - Saved Objects Management (6 tools)
+| Tool Name                      | Description                                        |
+|--------------------------------|----------------------------------------------------|
+| `vl_search_saved_objects`      | Search for Kibana saved objects (universal)       |
+| `vl_get_saved_object`          | Get a single saved object by type and ID          |
+| `vl_create_saved_object`       | Create a new saved object (universal)             |
+| `vl_update_saved_object`       | Update a single saved object                      |
+| `vl_bulk_update_saved_objects` | Update multiple saved objects in bulk             |
+| `vl_bulk_delete_saved_objects` | Delete multiple saved objects in bulk             |
 
 **Supported Saved Object Types:** `dashboard`, `visualization`, `index-pattern`, `search`, `config`, `lens`, `map`, `tag`, `canvas-workpad`, `canvas-element`
+
+#### Observability (OB) Tools 🆕 (29 tools)
+
+**Alerting Rules** (14 tools):
+- `ob_alert_find_rules` - Search and find alerting rules
+- `ob_alert_get_rule` - Get specific alerting rule details
+- `ob_alert_create_rule` - Create new alerting rule
+- `ob_alert_update_rule` - Update existing alerting rule
+- `ob_alert_delete_rule` - Delete alerting rule
+- `ob_alert_enable_rule` / `ob_alert_disable_rule` - Enable/disable rules
+- `ob_alert_mute_all` / `ob_alert_unmute_all` - Mute/unmute all alerts
+- `ob_alert_mute_alert` / `ob_alert_unmute_alert` - Mute/unmute specific alerts
+- `ob_alert_update_api_key` - Update rule API key
+- `ob_alert_get_rule_types` - Get available rule types
+- `ob_alert_health_check` - Check alerting system health
+
+**Connectors/Actions** (8 tools):
+- `ob_action_list` - List all connectors
+- `ob_action_get` - Get specific connector details
+- `ob_action_create` - Create new connector (Slack, Email, PagerDuty, etc.)
+- `ob_action_update` - Update existing connector
+- `ob_action_delete` - Delete connector
+- `ob_action_execute` - Execute/test connector
+- `ob_action_get_connector_types` - Get available connector types
+- `ob_action_list_action_types` - List action types (legacy)
+
+**SLO Management** (7 tools):
+- `ob_slo_find` - Search and find SLOs
+- `ob_slo_get` - Get specific SLO details
+- `ob_slo_create` - Create new SLO
+- `ob_slo_update` - Update existing SLO
+- `ob_slo_delete` - Delete SLO
+- `ob_slo_enable` / `ob_slo_disable` - Enable/disable SLO tracking
+
+For complete tool documentation, see [API_VERIFICATION_REPORT.md](API_VERIFICATION_REPORT.md) and [OB_TOOLS_IMPLEMENTATION_SUMMARY.md](OB_TOOLS_IMPLEMENTATION_SUMMARY.md)
 
 ---
 
@@ -364,12 +546,22 @@ node $(which mcp-server-kibana)
 - "Create a new dashboard with title 'Sales Overview'"
 - "Update the description of visualization 'viz-456'"
 - "Delete multiple old dashboards by their IDs"
-- "Search for lens visualizations in the 'analytics' space"
-- "Find all canvas workpads created this month"
-- "Get the first 10 index patterns with only title and description fields"
-- "Bulk update multiple dashboard titles"
-- "Search across multiple object types: dashboards and visualizations"
-- "Create a new index pattern for 'logs-*' with timestamp field"
+
+### Observability & Monitoring 🆕
+- "Create a CPU alert for production that sends Slack notifications when above 80%"
+- "List all alerting rules currently configured"
+- "Disable all alerts during the maintenance window"
+- "Create a Slack connector for the #alerts channel"
+- "Set up a PagerDuty integration for critical alerts"
+- "Create a 99.9% availability SLO for the API service"
+- "Show me the current error budget for all SLOs"
+- "Enable SLO tracking for the checkout service"
+
+### Security Operations
+- "Search for detection rules related to ransomware"
+- "Create a new detection rule for failed login attempts"
+- "Add an exception for known safe IPs"
+- "Create a timeline for investigating suspicious network activity"
 
 ---
 

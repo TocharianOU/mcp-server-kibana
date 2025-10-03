@@ -30,6 +30,17 @@ import { registerVLGetTools } from "./src/vl_get_tools.js";
 import { registerVLDeleteTools } from "./src/vl_delete_tools.js";
 import { registerVLCreateTools } from "./src/vl_create_tools.js";
 import { registerVLUpdateTools } from "./src/vl_update_tools.js";
+import { registerDTRulesTools } from "./src/dt_rules_tools.js";
+import { registerDTBulkTools } from "./src/dt_bulk_tools.js";
+import { registerDTSignalsTools } from "./src/dt_signals_tools.js";
+import { registerDTAdminTools } from "./src/dt_admin_tools.js";
+import { registerSCTimelineTools } from "./src/sc_timeline_tools.js";
+import { registerSCExceptionTools } from "./src/sc_exception_tools.js";
+import { registerSCListTools } from "./src/sc_list_tools.js";
+import { registerDataViewTools } from "./src/dataview_tools.js";
+import { registerOBAlertTools } from "./src/ob_alert_tools.js";
+import { registerOBActionTools } from "./src/ob_action_tools.js";
+import { registerOBSLOTools } from "./src/ob_slo_tools.js";
 
 
 // Create Kibana client
@@ -139,10 +150,11 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
         );
       }
     },
-    delete: async (url: string, options?: { headers?: any; space?: string }) => {
+    delete: async (url: string, data?: any, options?: { headers?: any; space?: string }) => {
       const spaceAwareUrl = buildSpaceAwareUrl(url, options?.space);
       try {
         const response = await axiosInstance.delete(spaceAwareUrl, { 
+          data: data,
           headers: { ...axiosConfig.headers, ...options?.headers }
         });
         return response;
@@ -298,7 +310,18 @@ export async function createKibanaMcpServer(options: ServerCreationOptions): Pro
     registerVLGetTools(serverBase, kibanaClient),
     registerVLDeleteTools(serverBase, kibanaClient),
     registerVLCreateTools(serverBase, kibanaClient),
-    registerVLUpdateTools(serverBase, kibanaClient)
+    registerVLUpdateTools(serverBase, kibanaClient),
+    registerDTRulesTools(serverBase, kibanaClient, defaultSpace),
+    registerDTBulkTools(serverBase, kibanaClient, defaultSpace),
+    registerDTSignalsTools(serverBase, kibanaClient, defaultSpace),
+    registerDTAdminTools(serverBase, kibanaClient, defaultSpace),
+    registerSCTimelineTools(serverBase, kibanaClient, defaultSpace),
+    registerSCExceptionTools(serverBase, kibanaClient, defaultSpace),
+    registerSCListTools(serverBase, kibanaClient, defaultSpace),
+    registerDataViewTools(serverBase, kibanaClient, defaultSpace),
+    registerOBAlertTools(serverBase, kibanaClient, defaultSpace),
+    registerOBActionTools(serverBase, kibanaClient, defaultSpace),
+    registerOBSLOTools(serverBase, kibanaClient, defaultSpace)
   ];
 
   await Promise.all(registrations);

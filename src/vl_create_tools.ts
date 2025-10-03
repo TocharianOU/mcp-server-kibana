@@ -267,6 +267,45 @@ function validateAttributesByType(type: string, attributes: Record<string, any>)
 /**
  * Register VL (Visualization Layer) create tools with the MCP server
  */
+/**
+ * Sync machine learning saved objects
+ * @param kibanaClient - Kibana client instance
+ * @param simulate - Whether to simulate the sync operation
+ * @param space - Target Kibana space (optional)
+ * @returns Promise<ToolResponse> - MCP tool response
+ */
+async function ml_sync_saved_objects_impl(
+  kibanaClient: KibanaClient,
+  simulate?: boolean,
+  space?: string
+): Promise<ToolResponse> {
+  try {
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (simulate) {
+      params.append('simulate', 'true');
+    }
+
+    const url = `/api/ml/saved_objects/sync${params.toString() ? '?' + params.toString() : ''}`;
+    const response = await kibanaClient.get(url, { space });
+
+    return {
+      content: [{
+        type: "text",
+        text: `ML saved objects sync ${simulate ? '(simulated)' : 'completed'}:\n\n${JSON.stringify(response, null, 2)}`
+      }]
+    };
+  } catch (error) {
+    return {
+      content: [{
+        type: "text",
+        text: `Error syncing ML saved objects: ${error instanceof Error ? error.message : String(error)}`
+      }],
+      isError: true
+    };
+  }
+}
+
 export function registerVLCreateTools(server: ServerBase, kibanaClient: KibanaClient) {
   // Tool: Create a Kibana saved object
   server.tool(
@@ -314,6 +353,26 @@ export function registerVLCreateTools(server: ServerBase, kibanaClient: KibanaCl
         params.overwrite,
         params.references,
         params.initialNamespaces,
+        params.space
+      );
+    }
+  );
+
+  // Tool: Sync machine learning saved objects
+  server.tool(
+    "ml_sync_saved_objects",
+    "Synchronize Kibana saved objects for machine learning jobs and trained models. This API runs automatically when Kibana starts and periodically thereafter. IMPORTANT: You must have 'all' privileges for the Machine Learning feature in the Analytics section. Use 'simulate' parameter to preview changes without applying them.",
+    z.object({
+      simulate: z.boolean().optional().describe("OPTIONAL: Simulate the sync operation without actually applying changes. Useful for previewing what would be synchronized (default: false)."),
+      space: z.string().optional().describe("Target Kibana space (optional, defaults to configured space)")
+    }),
+    async (params: { 
+      simulate?: boolean; 
+      space?: string 
+    }): Promise<ToolResponse> => {
+      return await ml_sync_saved_objects_impl(
+        kibanaClient,
+        params.simulate,
         params.space
       );
     }

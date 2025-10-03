@@ -13,6 +13,125 @@
 
 ---
 
+## 🎯 支持的使用场景
+
+本 MCP 服务器支持 AI 驱动的 Kibana 跨域交互：
+
+### 🔐 安全运营
+- **检测工程**（`dt_*` 工具）- 管理安全检测规则和告警
+- **威胁调查**（`sc_timeline_*` 工具）- 创建和分析安全时间线
+- **异常管理**（`sc_exception_*`, `sc_list_*` 工具）- 管理规则异常和值列表
+
+### 📊 可观测性与监控
+- **告警规则**（`ob_alert_*` 工具）- 为指标、日志、链路追踪和正常运行时间创建和管理可观测性告警
+- **通知渠道**（`ob_action_*` 工具）- 配置 Slack、邮件、PagerDuty、Webhook 集成
+- **SLO 管理**（`ob_slo_*` 工具）- 定义和跟踪服务级别目标与错误预算
+
+### 📈 数据可视化
+- **保存对象**（`vl_*` 工具）- 管理仪表板、可视化和画布工作台
+- **数据视图**（`dataview_*` 工具）- 配置数据源和字段映射
+
+### 🛠️ 系统管理
+- **API 执行**（`execute_kb_api`）- 执行任何 Kibana API 端点
+- **空间管理** - 多租户 Kibana 空间支持
+- **健康监控** - 检查系统状态和 API 可用性
+
+---
+
+## ⚙️ 工具选择指南
+
+本服务器提供 **87 个专用工具**，以实现对 AI 模型的精确控制。但是，**并非所有工具都是每个用例所必需的**。
+
+### 🎯 适用于高能力模型（GPT-4、Claude 3.5 Sonnet 等）
+
+**推荐配置**：**仅使用基础工具**（6 个工具）
+
+高能力模型可以智能地使用灵活的 `execute_kb_api` 工具访问任何 Kibana API：
+
+```json
+{
+  "mcpServers": {
+    "kibana-mcp-server": {
+      "command": "npx",
+      "args": ["@tocharian/mcp-server-kibana"],
+      "env": {
+        "KIBANA_URL": "http://your-kibana-server:5601",
+        "KIBANA_USERNAME": "your-username",
+        "KIBANA_PASSWORD": "your-password"
+      }
+    }
+  }
+}
+```
+
+**优势**：
+- ✅ 更快的工具加载和执行
+- ✅ 更低的内存占用
+- ✅ 更清晰的工具列表
+- ✅ 通过 `execute_kb_api` 完整访问所有 API
+
+**基础工具**（始终可用）：
+- `get_status` - 获取 Kibana 服务器状态
+- `execute_kb_api` - 执行任何 Kibana API（通用工具）
+- `get_available_spaces` - 列出 Kibana 空间
+- `search_kibana_api_paths` - 搜索 API 端点
+- `list_all_kibana_api_paths` - 列出所有 API 端点
+- `get_kibana_api_detail` - 获取 API 端点详情
+
+---
+
+### 🔧 适用于低能力模型或特定用例
+
+**推荐配置**：根据需求启用**领域特定工具**
+
+专用工具（`vl_*`、`dt_*`、`sc_*`、`ob_*`、`dataview_*`）提供清晰的、目的明确的接口，帮助低能力模型正确理解和执行操作。
+
+**选择您的工具集**：
+
+```bash
+# 安全运营重点
+# 启用: base-tools + dt_* + sc_*（安全检测与时间线）
+# 6 基础 + 27 检测 + 43 安全 = 76 工具
+
+# 可观测性重点
+# 启用: base-tools + ob_* + dataview_*（告警与监控）
+# 6 基础 + 14 告警 + 8 连接器 + 7 SLO + 11 数据视图 = 46 工具
+
+# 可视化重点
+# 启用: base-tools + vl_* + dataview_*（仪表板与保存对象）
+# 6 基础 + 6 可视化 + 11 数据视图 = 23 工具
+
+# 完整套件（所有功能）
+# 所有 87 工具启用（默认配置）
+```
+
+**专用工具的优势**：
+- ✅ 清晰的工具名称和描述
+- ✅ 明确的参数验证
+- ✅ 更好的 AI 模型理解
+- ✅ 降低复杂操作的错误率
+
+---
+
+### 💡 性能优化建议
+
+1. **从最小化开始，按需扩展**
+   - 从仅基础工具开始
+   - 如果模型难以处理复杂 API 调用，则添加专用工具
+   - 监控 AI 应用中的工具使用模式
+
+2. **领域特定部署**
+   - 安全团队：仅启用 `dt_*` + `sc_*` 工具
+   - SRE 团队：仅启用 `ob_*` + `dataview_*` 工具
+   - 分析团队：仅启用 `vl_*` + `dataview_*` 工具
+
+3. **自定义工具过滤**（高级）
+   - Fork 此仓库并在 `index.ts` 中注释掉未使用的工具注册
+   - 构建仅包含所需工具的自定义版本
+   - 减少初始化时间和内存使用
+
+---
+
 ## 功能特性
 
 ### 核心功能
@@ -26,40 +145,64 @@
 - 支持 SSL/TLS 及自定义 CA 证书
 - 支持多空间的企业级 Kibana 环境
 - 以工具和资源两种方式暴露 Kibana API 端点
-- 支持 MCP 客户端搜索、查看、执行 Kibana API
+- **87 个专用工具**，按领域组织（安全、可观测性、可视化、数据）
+- **灵活的工具选择** - 根据 AI 模型能力使用所有工具或仅基础工具
 - 类型安全、可扩展、易集成
 - **会话管理** - HTTP 模式下自动生成 UUID
 - **健康检查端点** - 用于监控和负载均衡
 
-### 可视化层 (VL) 功能
-- **完整的 CRUD 操作** - 支持 Kibana 保存对象的增删改查
-- **通用保存对象管理** - 支持所有对象类型
-- **智能参数处理** - 支持多种输入格式（数组、JSON 字符串、逗号分隔）
-- **优化搜索** - 支持分页和性能提示
-- **批量操作** - 高效的批量更新和删除
-- **版本控制** - 乐观并发控制确保安全更新
-- **引用管理** - 对象关系管理
-- **多格式类型支持** - 灵活的输入解析提升用户体验
+### 工具分类（总计 87 个）
+
+#### 基础工具（6 个）
+- 通用 API 执行和系统管理
+- **推荐用于所有部署**
+
+#### 可视化层 - VL 工具（6 个）
+- Kibana 保存对象的完整 CRUD 操作
+- 通用保存对象管理（仪表板、可视化等）
+- 智能参数处理，支持多种输入格式
+- 高效批量更新的批量操作
+
+#### 检测引擎 - DT 工具（27 个）
+- 安全检测规则管理
+- 告警信号跟踪和调查
+- 批量操作和规则导入/导出
+- 检测权限和索引管理
+
+#### 安全 - SC 工具（43 个）
+- 时间线调查（12 个工具）
+- 异常列表管理（14 个工具）
+- 值列表操作（17 个工具）
+
+#### 可观测性 - OB 工具（29 个）🆕
+- **告警规则**（14 个工具）- 指标、日志、链路追踪、正常运行时间告警
+- **连接器/操作**（8 个工具）- Slack、邮件、PagerDuty、Webhook 集成
+- **SLO 管理**（7 个工具）- 服务级别目标和错误预算
+
+#### 数据视图工具（11 个）
+- 数据源配置和字段映射
+- 运行时字段管理
+- 默认数据视图设置
 
 ---
 
 ## 目录结构
 
 ```
-├── index.ts                # 服务器入口
+├── index.ts                    # 服务器入口与工具注册
 ├── src/
-│   ├── types.ts            # 类型定义与 schema
-│   ├── base-tools.ts       # 工具注册与 API 逻辑
-│   ├── prompts.ts          # 提示词注册（专家 & 资源助手）
-│   ├── resources.ts        # 资源注册（API 路径/URI）
-│   ├── vl_search_tools.ts  # 可视化层 - 搜索工具
-│   ├── vl_get_tools.ts     # 可视化层 - 获取工具
-│   ├── vl_create_tools.ts  # 可视化层 - 创建工具
-│   ├── vl_update_tools.ts  # 可视化层 - 更新工具
-│   └── vl_delete_tools.ts  # 可视化层 - 删除工具
-├── kibana-openapi-source.yaml # Kibana API OpenAPI 索引
-├── README.md               # 英文文档
-├── README_zh.md            # 中文文档
+│   ├── types.ts                # 类型定义与 schema
+│   ├── base-tools.ts           # 基础工具（6 个）
+│   ├── prompts.ts              # 提示词模板
+│   ├── resources.ts            # 资源端点
+│   ├── vl_*.ts                 # 可视化层工具（6 个）
+│   ├── dt_*.ts                 # 检测引擎工具（27 个）
+│   ├── sc_*.ts                 # 安全工具（43 个）
+│   ├── ob_*.ts                 # 可观测性工具（29 个）🆕
+│   └── dataview_tools.ts       # 数据视图工具（11 个）
+├── kibana-openapi-source.yaml  # Kibana API OpenAPI 规范
+├── README.md                   # 英文文档
+└── README_zh.md                # 中文文档
 ```
 
 ---
@@ -89,17 +232,54 @@
 | `list_all_kibana_api_paths` | 列出所有 Kibana API 端点                     | 无                                                               |
 | `get_kibana_api_detail`     | 获取指定 Kibana API 端点的详细信息           | `method` (字符串), `path` (字符串)                                |
 
-### 可视化层 (VL) 工具 - 保存对象管理
-| 工具名称                      | 描述                                        | 输入参数                                                        |
-|-------------------------------|---------------------------------------------|----------------------------------------------------------------|
-| `vl_search_saved_objects`     | 搜索 Kibana 保存对象（通用）                | `types` (必需数组), `search` (可选), `fields` (可选), `perPage` (可选), `page` (可选), `space` (可选) |
-| `vl_get_saved_object`         | 通过类型和 ID 获取单个保存对象              | `type` (必需), `id` (必需), `useResolve` (可选), `space` (可选) |
-| `vl_create_saved_object`      | 创建新的保存对象（通用）                    | `type` (必需), `attributes` (必需), `id` (可选), `overwrite` (可选), `references` (可选), `space` (可选) |
-| `vl_update_saved_object`      | 更新单个保存对象                           | `type` (必需), `id` (必需), `attributes` (必需), `references` (可选), `version` (可选), `space` (可选) |
-| `vl_bulk_update_saved_objects`| 批量更新多个保存对象                       | `objects` (必需数组), `space` (可选) |
-| `vl_bulk_delete_saved_objects`| 批量删除多个保存对象                       | `objects` (必需数组), `force` (可选), `space` (可选) |
+### 专用工具分类
+
+**注意**：以下专用工具旨在帮助低能力 AI 模型。高能力模型（GPT-4、Claude 3.5 Sonnet）仅使用 `execute_kb_api` 基础工具即可实现相同结果。
+
+#### 可视化层 (VL) 工具 - 保存对象管理（6 个）
+| 工具名称                      | 描述                                        |
+|-------------------------------|---------------------------------------------|
+| `vl_search_saved_objects`     | 搜索 Kibana 保存对象（通用）                |
+| `vl_get_saved_object`         | 通过类型和 ID 获取单个保存对象              |
+| `vl_create_saved_object`      | 创建新的保存对象（通用）                    |
+| `vl_update_saved_object`      | 更新单个保存对象                           |
+| `vl_bulk_update_saved_objects`| 批量更新多个保存对象                       |
+| `vl_bulk_delete_saved_objects`| 批量删除多个保存对象                       |
 
 **支持的保存对象类型：** `dashboard`, `visualization`, `index-pattern`, `search`, `config`, `lens`, `map`, `tag`, `canvas-workpad`, `canvas-element`
+
+#### 可观测性 (OB) 工具 🆕（29 个）
+
+**告警规则**（14 个工具）：
+- `ob_alert_find_rules` - 搜索和查找告警规则
+- `ob_alert_get_rule` - 获取特定告警规则详情
+- `ob_alert_create_rule` - 创建新的告警规则
+- `ob_alert_update_rule` - 更新现有告警规则
+- `ob_alert_delete_rule` - 删除告警规则
+- `ob_alert_enable_rule` / `ob_alert_disable_rule` - 启用/禁用规则
+- `ob_alert_mute_all` / `ob_alert_unmute_all` - 静音/取消静音所有告警
+- `ob_alert_mute_alert` / `ob_alert_unmute_alert` - 静音/取消静音特定告警
+- `ob_alert_update_api_key` - 更新规则 API 密钥
+- `ob_alert_get_rule_types` - 获取可用的规则类型
+- `ob_alert_health_check` - 检查告警系统健康状态
+
+**连接器/操作**（8 个工具）：
+- `ob_action_list` - 列出所有连接器
+- `ob_action_get` - 获取特定连接器详情
+- `ob_action_create` - 创建新连接器（Slack、邮件、PagerDuty 等）
+- `ob_action_update` - 更新现有连接器
+- `ob_action_delete` - 删除连接器
+- `ob_action_execute` - 执行/测试连接器
+- `ob_action_get_connector_types` - 获取可用的连接器类型
+- `ob_action_list_action_types` - 列出操作类型（遗留）
+
+**SLO 管理**（7 个工具）：
+- `ob_slo_find` - 搜索和查找 SLO
+- `ob_slo_get` - 获取特定 SLO 详情
+- `ob_slo_create` - 创建新的 SLO
+- `ob_slo_update` - 更新现有 SLO
+- `ob_slo_delete` - 删除 SLO
+- `ob_slo_enable` / `ob_slo_disable` - 启用/禁用 SLO 跟踪
 
 ---
 
@@ -285,12 +465,22 @@ const toolsResponse = await fetch('http://localhost:3000/mcp', {
 - "创建标题为 '销售概览' 的新仪表盘"
 - "更新可视化 'viz-456' 的描述"
 - "通过 ID 删除多个旧仪表盘"
-- "在 'analytics' 空间中搜索 lens 可视化"
-- "查找本月创建的所有 canvas 工作区"
-- "获取前 10 个索引模式，只显示标题和描述字段"
-- "批量更新多个仪表盘标题"
-- "跨多种对象类型搜索：仪表盘和可视化"
-- "为 'logs-*' 创建新的索引模式，时间戳字段为 timestamp"
+
+### 可观测性与监控 🆕
+- "为生产环境创建 CPU 告警，超过 80% 时发送 Slack 通知"
+- "列出当前配置的所有告警规则"
+- "在维护窗口期间禁用所有告警"
+- "为 #alerts 频道创建 Slack 连接器"
+- "为关键告警设置 PagerDuty 集成"
+- "为 API 服务创建 99.9% 可用性 SLO"
+- "显示所有 SLO 的当前错误预算"
+- "为结账服务启用 SLO 跟踪"
+
+### 安全运营
+- "搜索与勒索软件相关的检测规则"
+- "为失败的登录尝试创建新的检测规则"
+- "为已知安全 IP 添加异常"
+- "创建时间线以调查可疑网络活动"
 
 ---
 

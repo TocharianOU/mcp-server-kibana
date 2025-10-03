@@ -70,8 +70,8 @@ export interface KibanaClient {
   get: (url: string, options?: { params?: any; headers?: any; space?: string }) => Promise<any>;
   post: (url: string, data?: any, options?: { headers?: any; space?: string }) => Promise<any>;
   put: (url: string, data?: any, options?: { headers?: any; space?: string }) => Promise<any>;
-  delete: (url: string, options?: { headers?: any; space?: string }) => Promise<any>;
-  patch?: (url: string, data?: any, options?: { headers?: any; space?: string }) => Promise<any>;
+  delete: (url: string, data?: any, options?: { headers?: any; space?: string }) => Promise<any>;
+  patch: (url: string, data?: any, options?: { headers?: any; space?: string }) => Promise<any>;
 }
 
 // Server base interface for tools, prompts, and resources registration
