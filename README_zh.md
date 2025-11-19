@@ -11,6 +11,10 @@
 
 **本项目由社区维护，非 Elastic 或 MCP 官方产品。**
 
+> **💡 配套项目推荐**
+>
+> 要实现完整的 Elastic Stack 集成，建议配合使用 [**Elasticsearch MCP Server**](https://github.com/TocharianOU/mcp-server-elasticsearch-sl) 进行直接的 Elasticsearch 数据操作。两者结合使用，可为你的 Elastic Stack 环境提供全面的可观测性和数据管理能力。
+
 ---
 
 ## 功能特性
