@@ -43,13 +43,18 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
     },
   };
 
-  // Add authentication - prioritize basic auth over cookies
-  if (config.username && config.password) {
+  // Add authentication - prioritize in order: API Key > Basic Auth > Cookies
+  if (config.apiKey) {
+    // API Key authentication
+    axiosConfig.headers['Authorization'] = `ApiKey ${config.apiKey}`;
+  } else if (config.username && config.password) {
+    // Basic authentication
     axiosConfig.auth = {
       username: config.username,
       password: config.password,
     };
   } else if (config.cookies) {
+    // Cookie-based authentication
     axiosConfig.headers['Cookie'] = config.cookies;
   }
 
@@ -315,6 +320,7 @@ async function main() {
       username: process.env.KIBANA_USERNAME || "",
       password: process.env.KIBANA_PASSWORD || "",
       cookies: process.env.KIBANA_COOKIES,
+      apiKey: process.env.KIBANA_API_KEY,
       caCert: process.env.KIBANA_CA_CERT,
       timeout: parseInt(process.env.KIBANA_TIMEOUT || "30000", 10),
       maxRetries: parseInt(process.env.KIBANA_MAX_RETRIES || "3", 10),

@@ -25,6 +25,7 @@ export const KibanaConfigSchema = z.object({
   username: z.string().optional(),
   password: z.string().optional(),
   cookies: z.string().optional(),
+  apiKey: z.string().optional(),
   caCert: z.string().optional(),
   timeout: z.number().optional().default(30000),
   maxRetries: z.number().optional().default(3),

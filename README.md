@@ -57,14 +57,26 @@ KIBANA_COOKIES="sid=your-session-id; security-session=your-security-session" \
 npx @tocharian/mcp-server-kibana
 ```
 
+#### Using API Key Authentication
+
+```bash
+# Set your Kibana API Key and run
+KIBANA_URL=http://your-kibana-server:5601 \
+KIBANA_API_KEY=your-base64-encoded-api-key \
+npx @tocharian/mcp-server-kibana
+```
+
 ### Method 2: Claude Desktop Integration (Recommended)
+
 Add to your Claude Desktop configuration file:
 
 **Config file locations:**
+
 - **MacOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 #### Using Basic Authentication
+
 ```json
 {
   "mcpServers": {
@@ -84,6 +96,7 @@ Add to your Claude Desktop configuration file:
 ```
 
 #### Using Cookie Authentication
+
 ```json
 {
   "mcpServers": {
@@ -101,7 +114,27 @@ Add to your Claude Desktop configuration file:
 }
 ```
 
+#### Using API Key Authentication
+
+```json
+{
+  "mcpServers": {
+    "kibana-mcp-server": {
+      "command": "npx",
+      "args": ["@tocharian/mcp-server-kibana"],
+      "env": {
+        "KIBANA_URL": "http://your-kibana-server:5601",
+        "KIBANA_API_KEY": "your-base64-encoded-api-key",
+        "KIBANA_DEFAULT_SPACE": "default",
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+      }
+    }
+  }
+}
+```
+
 ### Method 3: Using Environment File
+
 ```bash
 # Create .env file
 cat > kibana-mcp.env << EOF
@@ -138,6 +171,7 @@ npx @tocharian/mcp-server-kibana
 ```
 
 **HTTP Mode Features:**
+
 - Exposes MCP server at `http://host:port/mcp` endpoint
 - Health check available at `http://host:port/health`
 - Session-based connection management
@@ -145,6 +179,7 @@ npx @tocharian/mcp-server-kibana
 - Compatible with any HTTP client or MCP SDK
 
 **Example HTTP client usage:**
+
 ```javascript
 // Initialize connection
 const response = await fetch('http://localhost:3000/mcp', {
@@ -185,6 +220,7 @@ const toolsResponse = await fetch('http://localhost:3000/mcp', {
 ## Features
 
 ### Core Features
+
 - Connect to local or remote Kibana instances
 - **Dual transport modes**:
   - **Stdio transport** (default) - For Claude Desktop and local MCP clients
@@ -201,6 +237,7 @@ const toolsResponse = await fetch('http://localhost:3000/mcp', {
 - **Health check endpoint** for monitoring and load balancing
 
 ### Visualization Layer (VL) Features
+
 - **Complete CRUD operations** for Kibana saved objects
 - **Universal saved object management** - works with all object types
 - **Intelligent parameter handling** - supports multiple input formats (arrays, JSON strings, comma-separated)
@@ -241,6 +278,7 @@ const toolsResponse = await fetch('http://localhost:3000/mcp', {
 | `kibana-api://path/{method}/{encoded_path}`    | Returns details for a specific API endpoint        |
 
 **Examples:**
+
 - `kibana-api://paths?search=saved_objects`
 - `kibana-api://path/GET/%2Fapi%2Fstatus`
 
@@ -249,6 +287,7 @@ const toolsResponse = await fetch('http://localhost:3000/mcp', {
 ## Tools
 
 ### Base Tools
+
 | Tool Name                   | Description                                        | Input Parameters                                                    |
 |-----------------------------|----------------------------------------------------|---------------------------------------------------------------------|
 | `get_status`                | Get the current status of the Kibana server        | `space` (optional string) - Target Kibana space                    |
@@ -259,6 +298,7 @@ const toolsResponse = await fetch('http://localhost:3000/mcp', {
 | `get_kibana_api_detail`     | Get details for a specific Kibana API endpoint     | `method` (string), `path` (string)                                  |
 
 ### Visualization Layer (VL) Tools - Saved Objects Management
+
 | Tool Name                      | Description                                        | Input Parameters                                                    |
 |--------------------------------|----------------------------------------------------|---------------------------------------------------------------------|
 | `vl_search_saved_objects`      | Search for Kibana saved objects (universal)       | `types` (required array), `search` (optional), `fields` (optional), `perPage` (optional), `page` (optional), `space` (optional) |
@@ -286,9 +326,11 @@ const toolsResponse = await fetch('http://localhost:3000/mcp', {
 Configure the server via environment variables:
 
 ### Kibana Connection Settings
+
 | Variable Name                    | Description                                         | Required |
 |----------------------------------|-----------------------------------------------------|----------|
-| `KIBANA_URL`                     | Kibana server address (e.g. http://localhost:5601)   | Yes      |
+| `KIBANA_URL`                     | Kibana server address (e.g. <http://localhost:5601>)   | Yes      |
+| `KIBANA_API_KEY`                 | Kibana API Key (base64 encoded, for API key auth)  | No*      |
 | `KIBANA_USERNAME`                | Kibana username (for basic auth)                   | No*      |
 | `KIBANA_PASSWORD`                | Kibana password (for basic auth)                   | No*      |
 | `KIBANA_COOKIES`                 | Kibana session cookies (for cookie auth)           | No*      |
@@ -298,9 +340,10 @@ Configure the server via environment variables:
 | `KIBANA_MAX_RETRIES`             | Max request retries (default 3)                      | No       |
 | `NODE_TLS_REJECT_UNAUTHORIZED`   | Set to `0` to disable SSL certificate validation (use with caution) | No |
 
-*Either `KIBANA_COOKIES` or both `KIBANA_USERNAME` and `KIBANA_PASSWORD` must be provided for authentication.
+*One of the following authentication methods must be provided: `KIBANA_API_KEY`, `KIBANA_COOKIES`, or both `KIBANA_USERNAME` and `KIBANA_PASSWORD`. Priority order: API Key > Basic Auth > Cookies.
 
 ### Transport Mode Settings (NEW in v0.4.0)
+
 | Variable Name     | Description                                    | Default   | Values          |
 |-------------------|------------------------------------------------|-----------|-----------------|
 | `MCP_TRANSPORT`   | Transport mode selection                       | `stdio`   | `stdio`, `http` |
@@ -308,6 +351,7 @@ Configure the server via environment variables:
 | `MCP_HTTP_HOST`   | HTTP server host (when using HTTP transport)   | `localhost` | Any valid host  |
 
 **Transport Mode Details:**
+
 - **Stdio mode** (default): For Claude Desktop and local MCP clients
 - **HTTP mode**: Runs as a standalone HTTP server for remote access, API integration, and web applications
 
@@ -327,6 +371,7 @@ Configure the server via environment variables:
 ### Common Issues
 
 #### "import: command not found" error
+
 ```bash
 # Make sure you're using the latest version
 npm install -g @tocharian/mcp-server-kibana@latest
@@ -336,11 +381,13 @@ node $(which mcp-server-kibana)
 ```
 
 #### Connection issues
+
 - Verify Kibana URL is accessible
 - Check authentication credentials
 - For SSL issues, try setting `NODE_TLS_REJECT_UNAUTHORIZED=0`
 
 #### Claude Desktop not detecting the server
+
 - Restart Claude Desktop after config changes
 - Check config file syntax with a JSON validator
 - Verify environment variables are set correctly
@@ -350,6 +397,7 @@ node $(which mcp-server-kibana)
 ## Example Queries
 
 ### Basic Queries
+
 - "What is the status of my Kibana server?"
 - "What is the status of my Kibana server in the 'marketing' space?"
 - "List all available Kibana spaces I can access."
@@ -358,6 +406,7 @@ node $(which mcp-server-kibana)
 - "Execute a custom API request for /api/status."
 
 ### Saved Objects Management
+
 - "Search for all dashboards in Kibana"
 - "Find visualizations containing 'nginx' in the title"
 - "Get dashboard with ID 'my-dashboard-123'"
@@ -378,12 +427,14 @@ node $(which mcp-server-kibana)
 When using this server with Claude Desktop, two different prompt interaction modes are supported:
 
 ### 1. Tool-based Prompt Mode
+
 - **How it works:** Claude Desktop can directly call server tools (including base tools like `get_status`, `execute_api`, and VL tools like `vl_search_saved_objects`, `vl_create_saved_object`) to answer your questions or perform actions.
 - **Best for:** Users who want a conversational, guided experience. The server will automatically search, execute, and explain Kibana APIs and manage saved objects.
 - **Example:** "Show all dashboards containing 'sales'" or "Create a new visualization for web analytics"
 - **Testing tip:** Select the `kibana-tool-expert` prompt in Claude Desktop for integration testing, then start using it.
 
 ### 2. Resource-based Prompt Mode
+
 - **How it works:** Claude Desktop interacts with the server via resource URIs (such as `kibana-api://paths` or `kibana-api://path/GET/%2Fapi%2Fstatus`), and the server returns structured data for Claude to parse.
 - **Best for:** Advanced users, MCP clients that only support resource access, or programming scenarios needing raw API metadata.
 - **Example:** "Get resource kibana-api://paths?search=dashboard"
