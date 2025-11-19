@@ -381,7 +381,7 @@ async function main() {
             // Create server for this transport
             const server = await createKibanaMcpServer({
               name: serverName,
-              version: "0.4.1",
+              version: "0.5.0",
               config,
               description: serverDescription
             });
@@ -464,7 +464,7 @@ async function main() {
       
       const server = await createKibanaMcpServer({
         name: serverName,
-        version: "0.4.1",
+        version: "0.5.0",
         config,
         description: serverDescription
       });

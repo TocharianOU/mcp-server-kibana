@@ -13,6 +13,10 @@ A Kibana MCP server implementation that allows any MCP-compatible client (such a
 
 **This project is community-maintained and is not an official product of Elastic or MCP.**
 
+> **💡 Companion Project**
+>
+> For complete Elastic Stack integration, pair this with [**Elasticsearch MCP Server**](https://github.com/TocharianOU/mcp-server-elasticsearch-sl) for direct Elasticsearch data operations. Together, they provide comprehensive observability and data management capabilities for your Elastic Stack environment.
+
 ---
 
 ## 🚀 Installation
