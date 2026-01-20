@@ -1,47 +1,55 @@
 dist
 node_modules
 
-# 日志文件
+# Log files
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# 环境变量
+# Environment variables
 .env
 .env.*
 
-# 操作系统文件
+# OS files
 .DS_Store
 Thumbs.db
 
-# 编辑器配置
+# Editor config
 .vscode/
 .idea/
 *.swp
 *.code-workspace
 
-# 测试覆盖率
+# Test coverage
 coverage/
 
-# 其他常见缓存
+# Cache
 .cache/
 .npm/
 .yarn/
 
-# TypeScript 构建信息
+# TypeScript build info
 *.tsbuildinfo
 
-# 临时文件
+# Temp files
 *.tmp
 tmp/
 *.local.*
 
-# scripts 目录下的日志
+# Scripts logs
 scripts/*.log
 
 .cur*PR-5-REVIEW-REPORT.md
 
-# 内部开发文档和规范（不同步到 GitHub）
+# Internal dev docs (not synced to GitHub)
 PARAMETER_FORMAT_STANDARDS.md
 VL_TOOLS_TODO.md
+
+# Personal startup scripts (contains sensitive info)
+my.sh
+*.local.sh
+
+# Local docs
+OPTIMIZATION_SUMMARY.md
+QUICKSTART.md
