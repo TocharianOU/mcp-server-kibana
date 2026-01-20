@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { ServerBase, KibanaClient, ToolResponse } from "./types";
+import { simplifyEndpointDetail, formatEndpointToMarkdown } from "./openapi-simplifier.js";
+
 // Import API index and search logic
 import fs from 'fs';
 import path from 'path';
@@ -92,15 +94,38 @@ async function buildApiIndex(): Promise<void> {
   }
 }
 
+/**
+ * 智能搜索 API 端点 (带简单的相关性排序)
+ */
 function searchApiEndpoints(query: string): ApiEndpoint[] {
   if (!isIndexBuilt) throw new Error('API index not built yet');
   const q = query.toLowerCase();
-  return apiEndpointIndex.filter(e =>
-    e.path.toLowerCase().includes(q) ||
-    (e.description && e.description.toLowerCase().includes(q)) ||
-    (e.summary && e.summary.toLowerCase().includes(q)) ||
-    (e.tags && e.tags.some(tag => tag.toLowerCase().includes(q)))
-  );
+  
+  return apiEndpointIndex
+    .map(e => {
+      let score = 0;
+      const pathLower = e.path.toLowerCase();
+      const summaryLower = (e.summary || '').toLowerCase();
+      const descLower = (e.description || '').toLowerCase();
+      
+      // 路径匹配权重最高
+      if (pathLower === q) score += 100;
+      else if (pathLower.includes(q)) score += 20;
+      
+      // 摘要匹配权重次之
+      if (summaryLower.includes(q)) score += 10;
+      
+      // 标签匹配
+      if (e.tags && e.tags.some(tag => tag.toLowerCase().includes(q))) score += 5;
+      
+      // 描述匹配权重最低
+      if (descLower.includes(q)) score += 1;
+      
+      return { endpoint: e, score };
+    })
+    .filter(item => item.score > 0)
+    .sort((a, b) => b.score - a.score) // 按分数降序
+    .map(item => item.endpoint);
 }
 
 // Recursively resolve $ref references
@@ -236,15 +261,19 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
     async ({ search }): Promise<ToolResponse> => {
       await buildApiIndex();
       const endpoints = searchApiEndpoints(search);
+      
+      // Limit results to avoid token overflow
+      const limitedEndpoints = endpoints.slice(0, 15);
+      
       return {
         content: [
           {
             type: "text",
-            text: `Found ${endpoints.length} API endpoints: ${JSON.stringify(endpoints.map(e => ({
+            text: `Found ${endpoints.length} API endpoints (showing top ${limitedEndpoints.length}): ${JSON.stringify(limitedEndpoints.map(e => ({
               method: e.method,
               path: e.path,
               summary: e.summary,
-              description: e.description
+              description: e.description ? (e.description.length > 100 ? e.description.substring(0, 100) + '...' : e.description) : undefined
             })), null, 2)}`
           }
         ]
@@ -290,9 +319,10 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
     `Get details for a specific Kibana API endpoint`,
     z.object({
       method: z.string().describe("HTTP method, e.g. GET, POST, PUT, DELETE"),
-      path: z.string().describe("API path, e.g. /api/actions/connector_types")
+      path: z.string().describe("API path, e.g. /api/actions/connector_types"),
+      raw: z.boolean().optional().describe("If true, return raw JSON schema instead of simplified TypeScript interface")
     }),
-    async ({ method, path }): Promise<ToolResponse> => {
+    async ({ method, path, raw }): Promise<ToolResponse> => {
       await buildApiIndex();
       const endpoint = apiEndpointIndex.find(
         e => e.method === method.toUpperCase() && e.path === path
@@ -315,11 +345,27 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
         requestBody: resolveRef(endpoint.requestBody, openApiDoc),
         responses: resolveRef(endpoint.responses, openApiDoc)
       };
+      
+      if (raw) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `API endpoint details (Raw): ${JSON.stringify(detailed, null, 2)}`
+            }
+          ]
+        };
+      }
+
+      // 使用智能简化器
+      const simplified = simplifyEndpointDetail(detailed);
+      const markdown = formatEndpointToMarkdown(simplified);
+
       return {
         content: [
           {
             type: "text",
-            text: `API endpoint details: ${JSON.stringify(detailed, null, 2)}`
+            text: markdown
           }
         ]
       };

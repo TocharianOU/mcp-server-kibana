@@ -30,6 +30,7 @@ import { registerVLGetTools } from "./src/vl_get_tools.js";
 import { registerVLDeleteTools } from "./src/vl_delete_tools.js";
 import { registerVLCreateTools } from "./src/vl_create_tools.js";
 import { registerVLUpdateTools } from "./src/vl_update_tools.js";
+import { registerAnalysisTools } from "./src/analysis-tools.js";
 
 
 // Create Kibana client
@@ -303,7 +304,8 @@ export async function createKibanaMcpServer(options: ServerCreationOptions): Pro
     registerVLGetTools(serverBase, kibanaClient),
     registerVLDeleteTools(serverBase, kibanaClient),
     registerVLCreateTools(serverBase, kibanaClient),
-    registerVLUpdateTools(serverBase, kibanaClient)
+    registerVLUpdateTools(serverBase, kibanaClient),
+    registerAnalysisTools(serverBase, kibanaClient, defaultSpace)
   ];
 
   await Promise.all(registrations);
@@ -381,7 +383,7 @@ async function main() {
             // Create server for this transport
             const server = await createKibanaMcpServer({
               name: serverName,
-              version: "0.5.0",
+              version: "0.6.0",
               config,
               description: serverDescription
             });
@@ -464,7 +466,7 @@ async function main() {
       
       const server = await createKibanaMcpServer({
         name: serverName,
-        version: "0.5.0",
+        version: "0.6.0",
         config,
         description: serverDescription
       });
