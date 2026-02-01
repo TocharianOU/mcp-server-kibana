@@ -1,6 +1,6 @@
 /**
- * Saved Object 依赖关系分析器
- * 用于分析 Kibana 对象（Dashboard、Visualization、Index Pattern 等）之间的引用关系
+ * Saved Object Dependency Analyzer
+ * Analyzes reference relationships between Kibana objects (Dashboard, Visualization, Index Pattern, etc.)
  */
 
 import type { KibanaClient } from "./types";
@@ -15,9 +15,9 @@ export interface DependencyNode {
   id: string;
   type: string;
   title?: string;
-  referencedBy: SavedObjectRef[]; // 被哪些对象引用
-  references: SavedObjectRef[];   // 引用了哪些对象
-  depth: number; // 依赖深度
+  referencedBy: SavedObjectRef[]; // Referenced by which objects
+  references: SavedObjectRef[];   // References which objects
+  depth: number; // Dependency depth
 }
 
 export interface DependencyTree {
@@ -27,21 +27,21 @@ export interface DependencyTree {
     total_objects: number;
     max_depth: number;
     top_referenced: Array<{ id: string; type: string; title?: string; count: number }>;
-    orphans: Array<{ id: string; type: string; title?: string }>; // 孤立对象（没有被任何对象引用）
+    orphans: Array<{ id: string; type: string; title?: string }>; // Orphan objects (not referenced by any object)
   };
 }
 
 export interface ImpactAnalysis {
   target: { id: string; type: string; title?: string };
-  direct_dependencies: number;    // 直接依赖数量
-  indirect_dependencies: number;  // 间接依赖数量
-  affected_dashboards: SavedObjectRef[]; // 受影响的 Dashboard
+  direct_dependencies: number;    // Number of direct dependencies
+  indirect_dependencies: number;  // Number of indirect dependencies
+  affected_dashboards: SavedObjectRef[]; // Affected Dashboards
   risk_level: 'Low' | 'Medium' | 'High' | 'Critical';
   recommendation: string;
 }
 
 /**
- * 构建依赖关系树
+ * Build dependency tree
  */
 export async function buildDependencyTree(
   kibanaClient: KibanaClient,
@@ -53,7 +53,7 @@ export async function buildDependencyTree(
   const allNodes = new Map<string, DependencyNode>();
   const visited = new Set<string>();
 
-  // 递归遍历依赖
+  // Recursively traverse dependencies
   async function traverse(id: string, type: string, depth: number): Promise<DependencyNode> {
     const key = `${type}:${id}`;
     
@@ -64,7 +64,7 @@ export async function buildDependencyTree(
     visited.add(key);
 
     try {
-      // 获取对象详情
+      // Get object details
       const obj = await kibanaClient.get(`/api/saved_objects/${type}/${id}`, { space });
       
       const node: DependencyNode = {
@@ -78,11 +78,11 @@ export async function buildDependencyTree(
 
       allNodes.set(key, node);
 
-      // 递归处理引用的对象
+      // Recursively process referenced objects
       if (obj.references && obj.references.length > 0) {
         for (const ref of obj.references) {
           const childNode = await traverse(ref.id, ref.type, depth + 1);
-          // 记录反向引用
+          // Record reverse reference
           const childKey = `${ref.type}:${ref.id}`;
           const existingChild = allNodes.get(childKey);
           if (existingChild) {
@@ -93,14 +93,13 @@ export async function buildDependencyTree(
 
       return node;
     } catch (error) {
-      console.error(`Failed to fetch ${type}:${id}`, error);
       return { id, type, referencedBy: [], references: [], depth };
     }
   }
 
   const root = await traverse(rootId, rootType, 0);
 
-  // 计算统计信息
+  // Calculate statistics
   let maxDepthFound = 0;
   const referenceCounts = new Map<string, number>();
   const orphans: Array<{ id: string; type: string; title?: string }> = [];
@@ -137,7 +136,7 @@ export async function buildDependencyTree(
 }
 
 /**
- * 分析删除/修改某个对象的影响范围
+ * Analyze impact scope of deleting/modifying an object
  */
 export async function analyzeImpact(
   kibanaClient: KibanaClient,
@@ -145,7 +144,7 @@ export async function analyzeImpact(
   targetType: string,
   space?: string
 ): Promise<ImpactAnalysis> {
-  // 反向搜索：找到所有引用这个对象的对象
+  // Reverse search: find all objects that reference this object
   try {
     const searchResult = await kibanaClient.post(
       '/api/saved_objects/_find',
@@ -166,7 +165,7 @@ export async function analyzeImpact(
         name: obj.attributes?.title || obj.id
       }));
 
-    // 递归查找间接依赖（被依赖的对象又被什么引用）
+    // Recursively find indirect dependencies (what references the dependent objects)
     let indirectCount = 0;
     for (const dep of directDeps) {
       if (dep.type !== 'dashboard') {
@@ -183,7 +182,7 @@ export async function analyzeImpact(
       }
     }
 
-    // 风险评估
+    // Risk assessment
     let riskLevel: ImpactAnalysis['risk_level'] = 'Low';
     if (affectedDashboards.length > 10) riskLevel = 'Critical';
     else if (affectedDashboards.length > 5) riskLevel = 'High';
@@ -191,16 +190,16 @@ export async function analyzeImpact(
 
     let recommendation = '';
     if (riskLevel === 'Critical') {
-      recommendation = '⚠️ 警告：该对象被大量 Dashboard 引用。删除或修改可能导致严重影响。建议先在测试空间验证。';
+      recommendation = '⚠️ Warning: Object is heavily referenced by Dashboards. Deletion/modification may cause severe impact. Recommend testing in test space first.';
     } else if (riskLevel === 'High') {
-      recommendation = '⚠️ 注意：该对象被多个 Dashboard 使用。建议通知相关用户。';
+      recommendation = '⚠️ Notice: Object is used by multiple Dashboards. Recommend notifying relevant users.';
     } else if (riskLevel === 'Medium') {
-      recommendation = '📌 提示：该对象有一定依赖。请确认是否需要同步更新引用方。';
+      recommendation = '📌 Note: Object has some dependencies. Confirm if referencing parties need synchronous updates.';
     } else {
-      recommendation = '✅ 安全：该对象没有被其他对象引用，可以安全删除/修改。';
+      recommendation = '✅ Safe: Object is not referenced by other objects, can be safely deleted/modified.';
     }
 
-    // 获取目标对象信息
+    // Get target object info
     const targetObj = await kibanaClient.get(`/api/saved_objects/${targetType}/${targetId}`, { space });
 
     return {
@@ -221,33 +220,33 @@ export async function analyzeImpact(
 }
 
 /**
- * 格式化依赖树为 Markdown
+ * Format dependency tree to Markdown
  */
 export function formatDependencyTreeToMarkdown(tree: DependencyTree): string {
-  let md = `# 依赖关系分析\n\n`;
-  md += `## 📊 统计摘要\n`;
-  md += `- 总对象数：${tree.summary.total_objects}\n`;
-  md += `- 最大依赖深度：${tree.summary.max_depth}\n`;
-  md += `- 孤立对象数：${tree.summary.orphans.length}\n\n`;
+  let md = `# Dependency Analysis\n\n`;
+  md += `## 📊 Statistics Summary\n`;
+  md += `- Total Objects: ${tree.summary.total_objects}\n`;
+  md += `- Max Dependency Depth: ${tree.summary.max_depth}\n`;
+  md += `- Orphan Objects: ${tree.summary.orphans.length}\n\n`;
 
   if (tree.summary.top_referenced.length > 0) {
-    md += `## 🔥 最常被引用的对象\n`;
+    md += `## 🔥 Most Referenced Objects\n`;
     tree.summary.top_referenced.forEach((item, index) => {
-      md += `${index + 1}. **${item.title || item.id}** (${item.type}) - 被引用 ${item.count} 次\n`;
+      md += `${index + 1}. **${item.title || item.id}** (${item.type}) - Referenced ${item.count} times\n`;
     });
     md += '\n';
   }
 
   if (tree.summary.orphans.length > 0) {
-    md += `## 🔍 孤立对象（未被引用）\n`;
+    md += `## 🔍 Orphan Objects (Not Referenced)\n`;
     tree.summary.orphans.forEach(item => {
       md += `- ${item.title || item.id} (${item.type})\n`;
     });
     md += '\n';
   }
 
-  // 树状图
-  md += `## 🌳 依赖树\n`;
+  // Tree diagram
+  md += `## 🌳 Dependency Tree\n`;
   md += formatNodeTree(tree.root, tree.allNodes, '', new Set());
 
   return md;
@@ -263,7 +262,7 @@ function formatNodeTree(
   let result = `${prefix}📦 **${node.title || node.id}** (${node.type})\n`;
   
   if (visited.has(key)) {
-    result += `${prefix}  ↻ (循环引用)\n`;
+    result += `${prefix}  ↻ (Circular Reference)\n`;
     return result;
   }
   
@@ -289,19 +288,19 @@ function formatNodeTree(
 }
 
 /**
- * 格式化影响分析为 Markdown
+ * Format impact analysis to Markdown
  */
 export function formatImpactAnalysisToMarkdown(analysis: ImpactAnalysis): string {
-  let md = `# 影响范围分析\n\n`;
-  md += `## 🎯 目标对象\n`;
-  md += `- **名称**: ${analysis.target.title || analysis.target.id}\n`;
-  md += `- **类型**: ${analysis.target.type}\n`;
+  let md = `# Impact Analysis\n\n`;
+  md += `## 🎯 Target Object\n`;
+  md += `- **Name**: ${analysis.target.title || analysis.target.id}\n`;
+  md += `- **Type**: ${analysis.target.type}\n`;
   md += `- **ID**: ${analysis.target.id}\n\n`;
 
-  md += `## 📈 依赖统计\n`;
-  md += `- 直接依赖：${analysis.direct_dependencies} 个对象\n`;
-  md += `- 间接依赖：${analysis.indirect_dependencies} 个对象\n`;
-  md += `- 受影响的 Dashboard：${analysis.affected_dashboards.length} 个\n\n`;
+  md += `## 📈 Dependency Statistics\n`;
+  md += `- Direct Dependencies: ${analysis.direct_dependencies} objects\n`;
+  md += `- Indirect Dependencies: ${analysis.indirect_dependencies} objects\n`;
+  md += `- Affected Dashboards: ${analysis.affected_dashboards.length}\n\n`;
 
   const riskEmoji = {
     'Low': '✅',
@@ -310,11 +309,11 @@ export function formatImpactAnalysisToMarkdown(analysis: ImpactAnalysis): string
     'Critical': '🚨'
   };
 
-  md += `## ${riskEmoji[analysis.risk_level]} 风险评估: ${analysis.risk_level}\n`;
+  md += `## ${riskEmoji[analysis.risk_level]} Risk Assessment: ${analysis.risk_level}\n`;
   md += `${analysis.recommendation}\n\n`;
 
   if (analysis.affected_dashboards.length > 0) {
-    md += `## 📊 受影响的 Dashboard 列表\n`;
+    md += `## 📊 Affected Dashboard List\n`;
     analysis.affected_dashboards.forEach((dash, index) => {
       md += `${index + 1}. ${dash.name} (ID: ${dash.id})\n`;
     });

@@ -1,6 +1,6 @@
 /**
- * 智能分析工具注册模块
- * 将依赖分析和健康检查功能注册为 MCP Tools
+ * Intelligent Analysis Tools Registration Module
+ * Register dependency analysis and health check features as MCP Tools
  */
 
 import { z } from "zod";
@@ -20,7 +20,7 @@ import {
 
 export function registerAnalysisTools(server: ServerBase, kibanaClient: KibanaClient, defaultSpace: string) {
   
-  // Tool 1: 分析 Saved Object 的依赖关系树
+  // Tool 1: Analyze Saved Object dependency tree
   server.tool(
     "analyze_object_dependencies",
     "Analyze dependency tree for a Kibana saved object (Dashboard, Visualization, etc.)",
@@ -58,7 +58,7 @@ export function registerAnalysisTools(server: ServerBase, kibanaClient: KibanaCl
     }
   );
 
-  // Tool 2: 影响范围分析
+  // Tool 2: Impact scope analysis
   server.tool(
     "analyze_deletion_impact",
     "Analyze the impact of deleting or modifying a saved object (what will be affected)",
@@ -95,7 +95,7 @@ export function registerAnalysisTools(server: ServerBase, kibanaClient: KibanaCl
     }
   );
 
-  // Tool 3: Dashboard 健康度检查
+  // Tool 3: Dashboard health check
   server.tool(
     "check_dashboard_health",
     "Perform health check on a Dashboard to detect broken references, performance issues, etc.",
@@ -132,7 +132,7 @@ export function registerAnalysisTools(server: ServerBase, kibanaClient: KibanaCl
     }
   );
 
-  // Tool 4: 批量 Dashboard 健康度扫描
+  // Tool 4: Batch Dashboard health scan
   server.tool(
     "scan_all_dashboards_health",
     "Scan health status of all Dashboards in a space (returns summary report)",

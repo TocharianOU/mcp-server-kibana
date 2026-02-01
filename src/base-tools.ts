@@ -51,13 +51,11 @@ async function buildApiIndex(): Promise<void> {
   for (const p of possiblePaths) {
     if (fs.existsSync(p)) {
       YAML_FILE_PATH = p;
-      console.warn(`Using YAML file from: ${p}`);
       break;
     }
   }
 
   if (!YAML_FILE_PATH) {
-    console.error('Could not find kibana-openapi-source.yaml file');
     isIndexBuilt = true;
     return;
   }
@@ -89,13 +87,12 @@ async function buildApiIndex(): Promise<void> {
     }
     isIndexBuilt = true;
   } catch (error) {
-    console.error('Error loading or parsing YAML file:', error);
     throw error;
   }
 }
 
 /**
- * 智能搜索 API 端点 (带简单的相关性排序)
+ * Smart API endpoint search (with simple relevance ranking)
  */
 function searchApiEndpoints(query: string): ApiEndpoint[] {
   if (!isIndexBuilt) throw new Error('API index not built yet');
@@ -108,23 +105,23 @@ function searchApiEndpoints(query: string): ApiEndpoint[] {
       const summaryLower = (e.summary || '').toLowerCase();
       const descLower = (e.description || '').toLowerCase();
       
-      // 路径匹配权重最高
+      // Path match has highest weight
       if (pathLower === q) score += 100;
       else if (pathLower.includes(q)) score += 20;
       
-      // 摘要匹配权重次之
+      // Summary match has secondary weight
       if (summaryLower.includes(q)) score += 10;
       
-      // 标签匹配
+      // Tag match
       if (e.tags && e.tags.some(tag => tag.toLowerCase().includes(q))) score += 5;
       
-      // 描述匹配权重最低
+      // Description match has lowest weight
       if (descLower.includes(q)) score += 1;
       
       return { endpoint: e, score };
     })
     .filter(item => item.score > 0)
-    .sort((a, b) => b.score - a.score) // 按分数降序
+    .sort((a, b) => b.score - a.score) // Sort by score descending
     .map(item => item.endpoint);
 }
 
@@ -174,7 +171,6 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
           ]
         };
       } catch (error) {
-        console.error(`Failed to get server status: ${error}`);
         return {
           content: [
             {
@@ -237,7 +233,6 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
           ]
         };
       } catch (error) {
-        console.error(`API request failed: ${error}`);
         return {
           content: [
             {
@@ -356,8 +351,8 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
           ]
         };
       }
-
-      // 使用智能简化器
+      
+      // Use smart simplifier
       const simplified = simplifyEndpointDetail(detailed);
       const markdown = formatEndpointToMarkdown(simplified);
 
@@ -401,7 +396,6 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
           ]
         };
       } catch (error) {
-        console.error(`Failed to get available spaces: ${error}`);
         return {
           content: [
             {

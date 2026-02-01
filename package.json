@@ -1,24 +1,45 @@
 {
-  "name": "@tocharian/mcp-server-kibana",
+  "name": "@tocharianou/mcp-server-kibana",
   "description": "Kibana MCP Server",
-  "version": "0.6.0",
+  "version": "0.6.2",
+  "mcpName": "io.github.TocharianOU/kibana",
   "license": "Apache-2.0",
   "author": "TocharinOU",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "bin": {
-    "mcp-server-kibana": "./dist/index.js"
+    "mcp-server-kibana": "dist/index.js"
   },
-  "repository": "https://github.com/TocharianOU/mcp-server-kibana",
-  "bugs": "https://github.com/TocharianOU/mcp-server-kibana/issues",
-  "homepage": "https://github.com/TocharianOU/mcp-server-kibana",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TocharianOU/mcp-server-kibana.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TocharianOU/mcp-server-kibana/issues"
+  },
+  "homepage": "https://github.com/TocharianOU/mcp-server-kibana#readme",
   "keywords": [
     "kibana",
     "mcp",
     "mcp-server",
     "elasticsearch",
-    "model-context-protocol"
+    "model-context-protocol",
+    "elastic-stack",
+    "observability",
+    "monitoring",
+    "dashboard",
+    "visualization",
+    "analytics",
+    "logs",
+    "metrics",
+    "apm",
+    "claude",
+    "anthropic",
+    "api-management",
+    "openapi",
+    "devops",
+    "elastic"
   ],
   "files": [
     "dist",
