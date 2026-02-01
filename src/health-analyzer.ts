@@ -1,6 +1,6 @@
 /**
- * Dashboard 健康度分析器
- * 用于检测 Dashboard 的潜在问题（断裂引用、性能问题等）
+ * Dashboard Health Analyzer
+ * Detects potential issues in Dashboards (broken references, performance issues, etc.)
  */
 
 import type { KibanaClient } from "./types";
@@ -49,7 +49,7 @@ export interface BatchHealthReport {
 }
 
 /**
- * 分析单个 Dashboard 的健康度
+ * Analyze health status of a single Dashboard
  */
 export async function analyzeDashboardHealth(
   kibanaClient: KibanaClient,
@@ -58,7 +58,7 @@ export async function analyzeDashboardHealth(
   checkESIndices: boolean = false
 ): Promise<DashboardHealth> {
   try {
-    // 获取 Dashboard 详情
+    // Get Dashboard details
     const dashboard = await kibanaClient.get(`/api/saved_objects/dashboard/${dashboardId}`, { space });
     const title = dashboard.attributes?.title || dashboardId;
     const panelsJSON = dashboard.attributes?.panelsJSON;
@@ -74,8 +74,8 @@ export async function analyzeDashboardHealth(
         global_issues: [{
           severity: 'error',
           category: 'configuration',
-          message: 'Dashboard 没有配置任何面板',
-          suggestion: '添加至少一个可视化面板'
+          message: 'Dashboard has no panels configured',
+          suggestion: 'Add at least one visualization panel'
         }],
         summary: {
           healthy_panels: 0,
@@ -91,11 +91,11 @@ export async function analyzeDashboardHealth(
     const panelHealths: PanelHealth[] = [];
     const globalIssues: HealthIssue[] = [];
 
-    // 检查每个 Panel
+    // Check each Panel
     for (const panel of panels) {
       const panelIssues: HealthIssue[] = [];
       
-      // 1. 检查 Panel 引用是否存在
+      // 1. Check if Panel reference exists
       const panelRefId = panel.panelRefName || panel.id;
       const reference = references.find((ref: any) => ref.name === panelRefId);
       
@@ -103,12 +103,12 @@ export async function analyzeDashboardHealth(
         panelIssues.push({
           severity: 'error',
           category: 'broken_reference',
-          message: `Panel 缺少引用定义`,
+          message: `Panel missing reference definition`,
           details: { panelId: panel.id },
-          suggestion: '该 Panel 可能已被删除，建议从 Dashboard 中移除此 Panel'
+          suggestion: 'This Panel may have been deleted, recommend removing it from Dashboard'
         });
       } else {
-        // 2. 检查引用的对象是否存在
+        // 2. Check if referenced object exists
         try {
           await kibanaClient.get(`/api/saved_objects/${reference.type}/${reference.id}`, { space });
         } catch (error: any) {
@@ -116,35 +116,35 @@ export async function analyzeDashboardHealth(
             panelIssues.push({
               severity: 'critical',
               category: 'broken_reference',
-              message: `引用的 ${reference.type} 对象不存在`,
+              message: `Referenced ${reference.type} object does not exist`,
               details: { referenceId: reference.id, referenceType: reference.type },
-              suggestion: `恢复被删除的对象或从 Dashboard 中移除此 Panel`
+              suggestion: `Restore deleted object or remove this Panel from Dashboard`
             });
           }
         }
       }
 
-      // 3. 性能检查（Panel 尺寸）
+      // 3. Performance check (Panel size)
       const gridData = panel.gridData || {};
       const panelArea = (gridData.w || 0) * (gridData.h || 0);
       if (panelArea > 48) {
         panelIssues.push({
           severity: 'warning',
           category: 'performance',
-          message: 'Panel 尺寸过大可能影响性能',
+          message: 'Panel size too large may affect performance',
           details: { width: gridData.w, height: gridData.h },
-          suggestion: '考虑拆分为多个小 Panel'
+          suggestion: 'Consider splitting into multiple smaller Panels'
         });
       }
 
-      // 4. 检查 Panel 类型
+      // 4. Check Panel type
       const panelType = panel.type;
       if (!panelType) {
         panelIssues.push({
           severity: 'error',
           category: 'configuration',
-          message: 'Panel 缺少类型定义',
-          suggestion: '重新配置 Panel'
+          message: 'Panel missing type definition',
+          suggestion: 'Reconfigure Panel'
         });
       }
 
@@ -163,19 +163,19 @@ export async function analyzeDashboardHealth(
       });
     }
 
-    // 全局检查
+    // Global checks
     
-    // 1. 检查 Dashboard 是否过于复杂
+    // 1. Check if Dashboard is too complex
     if (panels.length > 20) {
       globalIssues.push({
         severity: 'warning',
         category: 'performance',
-        message: `Dashboard 包含 ${panels.length} 个 Panel，可能导致加载缓慢`,
-        suggestion: '考虑拆分为多个主题 Dashboard'
+        message: `Dashboard contains ${panels.length} Panels, may cause slow loading`,
+        suggestion: 'Consider splitting into multiple themed Dashboards'
       });
     }
 
-    // 2. 检查索引模式引用
+    // 2. Check index pattern references
     if (checkESIndices) {
       const indexPatternRefs = references.filter((ref: any) => ref.type === 'index-pattern');
       for (const indexPatternRef of indexPatternRefs) {
@@ -185,29 +185,29 @@ export async function analyzeDashboardHealth(
             { space }
           );
           
-          // 这里可以进一步调用 ES API 检查索引是否存在
-          // 由于需要 ES Client，暂时跳过
+          // Could further call ES API to check if index exists
+          // Skipped for now as it requires ES Client
           
         } catch (error: any) {
           if (error.response?.status === 404) {
             globalIssues.push({
               severity: 'critical',
               category: 'broken_reference',
-              message: `引用的索引模式不存在: ${indexPatternRef.id}`,
-              suggestion: '重新创建索引模式或更新 Dashboard 引用'
+              message: `Referenced index pattern does not exist: ${indexPatternRef.id}`,
+              suggestion: 'Recreate index pattern or update Dashboard reference'
             });
           }
         }
       }
     }
 
-    // 计算总体健康度
+    // Calculate overall health
     const healthyCount = panelHealths.filter(p => p.status === 'healthy').length;
     const warningCount = panelHealths.filter(p => p.status === 'warning').length;
     const unhealthyCount = panelHealths.filter(p => p.status === 'unhealthy').length;
     const totalIssues = panelHealths.reduce((sum, p) => sum + p.issues.length, 0) + globalIssues.length;
 
-    // 健康评分算法
+    // Health scoring algorithm
     const healthScore = Math.max(0, Math.min(100, 
       100 - (unhealthyCount * 20) - (warningCount * 5) - (globalIssues.length * 10)
     ));
@@ -240,7 +240,7 @@ export async function analyzeDashboardHealth(
 }
 
 /**
- * 批量分析多个 Dashboard 的健康度
+ * Batch analyze health of multiple Dashboards
  */
 export async function batchAnalyzeDashboards(
   kibanaClient: KibanaClient,
@@ -248,7 +248,7 @@ export async function batchAnalyzeDashboards(
   maxDashboards: number = 50
 ): Promise<BatchHealthReport> {
   try {
-    // 搜索所有 Dashboard
+    // Search all Dashboards
     const searchResult = await kibanaClient.post(
       '/api/saved_objects/_find',
       {
@@ -267,8 +267,7 @@ export async function batchAnalyzeDashboards(
         const health = await analyzeDashboardHealth(kibanaClient, dashboard.id, space, false);
         healthReports.push(health);
       } catch (error) {
-        console.error(`Failed to analyze dashboard ${dashboard.id}:`, error);
-        // 继续分析其他 Dashboard
+        // Continue analyzing other Dashboards
       }
     }
 
@@ -293,7 +292,7 @@ export async function batchAnalyzeDashboards(
 }
 
 /**
- * 格式化健康度报告为 Markdown
+ * Format health report to Markdown
  */
 export function formatHealthReportToMarkdown(health: DashboardHealth): string {
   const statusEmoji = {
@@ -302,20 +301,20 @@ export function formatHealthReportToMarkdown(health: DashboardHealth): string {
     'unhealthy': '🔴'
   };
 
-  let md = `# Dashboard 健康度报告\n\n`;
-  md += `## ${statusEmoji[health.overall_status]} 总体状态: ${health.overall_status.toUpperCase()}\n`;
+  let md = `# Dashboard Health Report\n\n`;
+  md += `## ${statusEmoji[health.overall_status]} Overall Status: ${health.overall_status.toUpperCase()}\n`;
   md += `- **Dashboard**: ${health.title}\n`;
-  md += `- **健康评分**: ${health.overall_score}/100\n`;
-  md += `- **Panel 总数**: ${health.panel_count}\n\n`;
+  md += `- **Health Score**: ${health.overall_score}/100\n`;
+  md += `- **Total Panels**: ${health.panel_count}\n\n`;
 
-  md += `## 📊 Panel 统计\n`;
-  md += `- ✅ 健康: ${health.summary.healthy_panels}\n`;
-  md += `- ⚠️ 警告: ${health.summary.warning_panels}\n`;
-  md += `- 🔴 异常: ${health.summary.unhealthy_panels}\n`;
-  md += `- 🐛 问题总数: ${health.summary.total_issues}\n\n`;
+  md += `## 📊 Panel Statistics\n`;
+  md += `- ✅ Healthy: ${health.summary.healthy_panels}\n`;
+  md += `- ⚠️ Warning: ${health.summary.warning_panels}\n`;
+  md += `- 🔴 Unhealthy: ${health.summary.unhealthy_panels}\n`;
+  md += `- 🐛 Total Issues: ${health.summary.total_issues}\n\n`;
 
   if (health.global_issues.length > 0) {
-    md += `## 🚨 全局问题\n`;
+    md += `## 🚨 Global Issues\n`;
     health.global_issues.forEach((issue, index) => {
       const severityEmoji = { info: 'ℹ️', warning: '⚠️', error: '❌', critical: '🚨' };
       md += `${index + 1}. ${severityEmoji[issue.severity]} **[${issue.severity.toUpperCase()}]** ${issue.message}\n`;
@@ -328,7 +327,7 @@ export function formatHealthReportToMarkdown(health: DashboardHealth): string {
 
   const unhealthyPanels = health.panels.filter(p => p.status === 'unhealthy');
   if (unhealthyPanels.length > 0) {
-    md += `## 🔴 异常 Panel 详情\n`;
+    md += `## 🔴 Unhealthy Panel Details\n`;
     unhealthyPanels.forEach(panel => {
       md += `### Panel: ${panel.title || panel.panel_id} (${panel.panel_type})\n`;
       panel.issues.forEach(issue => {
@@ -343,7 +342,7 @@ export function formatHealthReportToMarkdown(health: DashboardHealth): string {
 
   const warningPanels = health.panels.filter(p => p.status === 'warning');
   if (warningPanels.length > 0) {
-    md += `## ⚠️ 警告 Panel (前5个)\n`;
+    md += `## ⚠️ Warning Panels (top 5)\n`;
     warningPanels.slice(0, 5).forEach(panel => {
       md += `- **${panel.title || panel.panel_id}**: ${panel.issues[0]?.message}\n`;
     });
@@ -353,40 +352,40 @@ export function formatHealthReportToMarkdown(health: DashboardHealth): string {
 }
 
 /**
- * 格式化批量健康度报告为 Markdown
+ * Format batch health report to Markdown
  */
 export function formatBatchHealthReportToMarkdown(report: BatchHealthReport): string {
-  let md = `# Dashboard 批量健康度报告\n\n`;
-  md += `## 📊 总体概览\n`;
-  md += `- 总 Dashboard 数: ${report.summary.total_dashboards}\n`;
-  md += `- ✅ 健康: ${report.summary.healthy} (${Math.round(report.summary.healthy / report.summary.total_dashboards * 100)}%)\n`;
-  md += `- ⚠️ 警告: ${report.summary.warning} (${Math.round(report.summary.warning / report.summary.total_dashboards * 100)}%)\n`;
-  md += `- 🔴 异常: ${report.summary.unhealthy} (${Math.round(report.summary.unhealthy / report.summary.total_dashboards * 100)}%)\n`;
-  md += `- 🚨 严重问题: ${report.summary.critical_issues}\n\n`;
+  let md = `# Dashboard Batch Health Report\n\n`;
+  md += `## 📊 Overall Summary\n`;
+  md += `- Total Dashboards: ${report.summary.total_dashboards}\n`;
+  md += `- ✅ Healthy: ${report.summary.healthy} (${Math.round(report.summary.healthy / report.summary.total_dashboards * 100)}%)\n`;
+  md += `- ⚠️ Warning: ${report.summary.warning} (${Math.round(report.summary.warning / report.summary.total_dashboards * 100)}%)\n`;
+  md += `- 🔴 Unhealthy: ${report.summary.unhealthy} (${Math.round(report.summary.unhealthy / report.summary.total_dashboards * 100)}%)\n`;
+  md += `- 🚨 Critical Issues: ${report.summary.critical_issues}\n\n`;
 
-  // 按健康度排序，先显示问题最严重的
+  // Sort by health score, show most problematic first
   const sortedDashboards = [...report.dashboards].sort((a, b) => a.overall_score - b.overall_score);
 
   if (report.summary.unhealthy > 0) {
-    md += `## 🔴 需要紧急修复的 Dashboard\n`;
+    md += `## 🔴 Dashboards Requiring Urgent Fix\n`;
     sortedDashboards
       .filter(d => d.overall_status === 'unhealthy')
       .slice(0, 10)
       .forEach((dashboard, index) => {
-        md += `${index + 1}. **${dashboard.title}** (评分: ${dashboard.overall_score}/100)\n`;
-        md += `   - 异常 Panel: ${dashboard.summary.unhealthy_panels}/${dashboard.panel_count}\n`;
-        md += `   - 问题数: ${dashboard.summary.total_issues}\n`;
+        md += `${index + 1}. **${dashboard.title}** (Score: ${dashboard.overall_score}/100)\n`;
+        md += `   - Unhealthy Panels: ${dashboard.summary.unhealthy_panels}/${dashboard.panel_count}\n`;
+        md += `   - Total Issues: ${dashboard.summary.total_issues}\n`;
       });
     md += '\n';
   }
 
   if (report.summary.warning > 0) {
-    md += `## ⚠️ 建议优化的 Dashboard (前5个)\n`;
+    md += `## ⚠️ Dashboards Recommended for Optimization (top 5)\n`;
     sortedDashboards
       .filter(d => d.overall_status === 'warning')
       .slice(0, 5)
       .forEach((dashboard, index) => {
-        md += `${index + 1}. **${dashboard.title}** (评分: ${dashboard.overall_score}/100)\n`;
+        md += `${index + 1}. **${dashboard.title}** (Score: ${dashboard.overall_score}/100)\n`;
       });
   }
 

@@ -66,7 +66,6 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
         ca: fs.readFileSync(config.caCert),
       });
     } catch (error) {
-      console.error("Error loading CA certificate:", error);
       throw new KibanaError("Failed to load CA certificate", undefined, error);
     }
   }
@@ -90,7 +89,6 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
     },
     (error) => {
 
-      console.error('API request failed:', error.message);
       return Promise.reject(error);
     }
   );
@@ -444,16 +442,11 @@ async function main() {
 
       // Start HTTP server
       app.listen(httpPort, httpHost, () => {
-        console.log(`\n✓ Kibana MCP Server (HTTP Mode) is running`);
-        console.log(`  Endpoint: http://${httpHost}:${httpPort}/mcp`);
-        console.log(`  Health: http://${httpHost}:${httpPort}/health`);
-        console.log(`  Transport: Streamable HTTP`);
-        console.log(`  Default Space: ${defaultSpace}\n`);
+        process.stderr.write(`Kibana MCP Server (HTTP Mode) started on http://${httpHost}:${httpPort}\n`);
       });
 
       // Handle process termination
       process.on("SIGINT", async () => {
-        console.log("\nShutting down server...");
         for (const [sessionId, transport] of transports.entries()) {
           await transport.close();
         }
@@ -466,7 +459,7 @@ async function main() {
       
       const server = await createKibanaMcpServer({
         name: serverName,
-        version: "0.6.0",
+        version: "0.6.2",
         config,
         description: serverDescription
       });
@@ -482,7 +475,7 @@ async function main() {
     }
     
   } catch (error) {
-    console.error("Fatal error:", error);
+    process.stderr.write(`Fatal error: ${error}\n`);
     process.exit(1);
   }
 }
