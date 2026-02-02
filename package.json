@@ -1,7 +1,7 @@
 {
   "name": "@tocharianou/mcp-server-kibana",
   "description": "Kibana MCP Server",
-  "version": "0.7.1",
+  "version": "0.7.0",
   "mcpName": "io.github.TocharianOU/kibana",
   "license": "Apache-2.0",
   "author": "TocharinOU",
@@ -64,7 +64,8 @@
     "license-checker": "license-checker --production --onlyAllow='MIT;Apache-2.0;Apache1.1;ISC;BSD-3-Clause;BSD-2-Clause;0BSD'",
     "license-header": "./scripts/check-spdx",
     "generate-notice": "node ./scripts/generate-notice.js",
-    "release": "npm run build && tar -czf mcp-server-kibana-v$npm_package_version.tar.gz dist logos LICENSE README.md kibana-openapi-source.yaml package.json"
+    "release": "./scripts/create-release.sh",
+    "release:npm": "npm run build && tar -czf mcp-server-kibana-v$npm_package_version.tar.gz dist logos LICENSE README.md kibana-openapi-source.yaml package.json"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.2",

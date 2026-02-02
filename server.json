@@ -1,0 +1,116 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.TocharianOU/kibana",
+  "description": "Kibana MCP Server with dynamic API discovery and comprehensive Elastic Stack integration",
+  "title": "Kibana",
+  "websiteUrl": "https://github.com/TocharianOU/mcp-server-kibana",
+  "repository": {
+    "url": "https://github.com/TocharianOU/mcp-server-kibana",
+    "source": "github"
+  },
+      "version": "0.7.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@tocharianou/mcp-server-kibana",
+      "version": "0.7.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "KIBANA_URL",
+          "description": "Your Kibana instance URL (e.g., http://localhost:5601)",
+          "isRequired": true,
+          "format": "string"
+        },
+        {
+          "name": "KIBANA_API_KEY",
+          "description": "Kibana API key for authentication",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "KIBANA_USERNAME",
+          "description": "Kibana username for basic authentication",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "name": "KIBANA_PASSWORD",
+          "description": "Kibana password for basic authentication",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    },
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@tocharianou/mcp-server-kibana",
+      "version": "0.7.0",
+      "transport": {
+        "type": "streamable-http",
+        "url": "http://localhost:{MCP_HTTP_PORT}/mcp"
+      },
+      "environmentVariables": [
+        {
+          "name": "MCP_TRANSPORT",
+          "description": "Transport mode selection",
+          "isRequired": true,
+          "format": "string",
+          "default": "http",
+          "choices": ["stdio", "http"]
+        },
+        {
+          "name": "MCP_HTTP_PORT",
+          "description": "HTTP server port",
+          "isRequired": false,
+          "format": "number",
+          "default": "3000"
+        },
+        {
+          "name": "KIBANA_URL",
+          "description": "Your Kibana instance URL",
+          "isRequired": true,
+          "format": "string"
+        },
+        {
+          "name": "KIBANA_API_KEY",
+          "description": "Kibana API key for authentication",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "KIBANA_USERNAME",
+          "description": "Kibana username",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "name": "KIBANA_PASSWORD",
+          "description": "Kibana password",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "tool": "manual",
+      "version": "0.7.0",
+      "features": {
+        "openapi_based": true,
+        "dynamic_api_discovery": true,
+        "elastic_stack_integration": true,
+        "transport_modes": ["stdio", "http"]
+      }
+    }
+  }
+}
