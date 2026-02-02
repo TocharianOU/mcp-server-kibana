@@ -53,3 +53,12 @@ my.sh
 # Local docs
 OPTIMIZATION_SUMMARY.md
 QUICKSTART.md
+
+# Release files
+*.tar.gz
+*.tgz
+release-tmp/
+test-release/
+
+# MCP Registry tokens
+.mcpregistry_*
