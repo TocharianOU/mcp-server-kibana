@@ -70,7 +70,7 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
     }
   }
 
-  // 动态的 URL 转换逻辑 - 支持每次调用时指定空间
+  // Dynamic URL transformation logic - support specifying space for each call
   const buildSpaceAwareUrl = (url: string, space?: string): string => {
     const targetSpace = space || config.defaultSpace;
     if (targetSpace && targetSpace !== 'default' && url.startsWith('/api/')) {
@@ -381,7 +381,7 @@ async function main() {
             // Create server for this transport
             const server = await createKibanaMcpServer({
               name: serverName,
-              version: "0.6.0",
+              version: "0.7.3",
               config,
               description: serverDescription
             });
@@ -459,7 +459,7 @@ async function main() {
       
       const server = await createKibanaMcpServer({
         name: serverName,
-        version: "0.6.2",
+        version: "0.7.3",
         config,
         description: serverDescription
       });

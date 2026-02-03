@@ -8,13 +8,13 @@
     "url": "https://github.com/TocharianOU/mcp-server-kibana",
     "source": "github"
   },
-      "version": "0.7.2",
+      "version": "0.7.3",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@tocharianou/mcp-server-kibana",
-      "version": "0.7.2",
+      "version": "0.7.3",
       "transport": {
         "type": "stdio"
       },
@@ -51,7 +51,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@tocharianou/mcp-server-kibana",
-      "version": "0.7.2",
+      "version": "0.7.3",
       "transport": {
         "type": "streamable-http",
         "url": "http://localhost:{MCP_HTTP_PORT}/mcp"
@@ -104,7 +104,7 @@
   "_meta": {
     "io.modelcontextprotocol.registry/publisher-provided": {
       "tool": "manual",
-      "version": "0.7.2",
+      "version": "0.7.3",
       "features": {
         "openapi_based": true,
         "dynamic_api_discovery": true,

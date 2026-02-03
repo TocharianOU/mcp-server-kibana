@@ -64,12 +64,38 @@ tar -czf "${TARBALL}" -C "${RELEASE_DIR}" .
 echo "🧹 Cleaning up temporary directory..."
 rm -rf "${RELEASE_DIR}"
 
+echo "🔐 Generating checksums..."
+# 生成 SHA256 校验和
+shasum -a 256 "${TARBALL}" > "${TARBALL}.sha256"
+echo "  ✓ SHA256: ${TARBALL}.sha256"
+
+# 生成 SHA512 校验和
+shasum -a 512 "${TARBALL}" > "${TARBALL}.sha512"
+echo "  ✓ SHA512: ${TARBALL}.sha512"
+
+# 显示校验和
+echo ""
+echo "📋 Checksums:"
+echo "SHA256:"
+cat "${TARBALL}.sha256"
+echo ""
+echo "SHA512:"
+cat "${TARBALL}.sha512"
+
+echo ""
 echo "✅ Release package created: ${TARBALL}"
 echo ""
 echo "📊 Package size:"
 ls -lh "${TARBALL}"
 echo ""
+echo "📦 Release files:"
+ls -lh "${TARBALL}"*
+echo ""
 echo "🎯 To test the package:"
 echo "  mkdir test-release && cd test-release"
 echo "  tar -xzf ../${TARBALL}"
 echo "  node dist/index.js"
+echo ""
+echo "🔐 To verify checksum:"
+echo "  shasum -a 256 -c ${TARBALL}.sha256"
+echo "  shasum -a 512 -c ${TARBALL}.sha512"
