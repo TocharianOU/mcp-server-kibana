@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ServerBase, KibanaClient, ToolResponse } from "./types";
+import { checkTokenLimit } from "./utils/token-limiter.js";
 
 /**
  * Visualization Tools (vl_*) - Kibana Data Visualization Tools
@@ -264,10 +265,7 @@ async function vl_search_saved_objects_impl(
  * @param kibanaClient - Kibana client instance
  * @param defaultSpace - Default Kibana space
  */
-export function registerVlTools(server: ServerBase, kibanaClient: KibanaClient, defaultSpace: string) {
-  // Tool: Search for Kibana dashboards - Optimized for dashboard search
- 
-
+export function registerVlTools(server: ServerBase, kibanaClient: KibanaClient, defaultSpace: string, maxTokenCall = 20000) {
   // Tool: Search for Kibana saved objects - Universal saved objects search
   server.tool(
     "vl_search_saved_objects",
@@ -321,10 +319,11 @@ export function registerVlTools(server: ServerBase, kibanaClient: KibanaClient, 
       hasReferenceOperator: z.string().optional().describe("Operator for has_reference parameter (OR/AND, default: OR)"),
       hasNoReferenceOperator: z.string().optional().describe("Operator for has_no_reference parameter (OR/AND, default: OR)"),
       aggs: z.string().optional().describe("Aggregation structure, serialized as a string. Use for advanced analytics on saved objects."),
-      space: z.string().optional().describe("Target Kibana space (optional, defaults to configured space)")
+      space: z.string().optional().describe("Target Kibana space (optional, defaults to configured space)"),
+      break_token_rule: z.boolean().optional().default(false).describe("Set to true to bypass token limits in critical situations. Use sparingly to avoid context overflow.")
     }),
     async (params): Promise<ToolResponse> => {
-      return await vl_search_saved_objects_impl(
+      const result = await vl_search_saved_objects_impl(
         kibanaClient,
         params.search,
         params.types,
@@ -335,7 +334,7 @@ export function registerVlTools(server: ServerBase, kibanaClient: KibanaClient, 
         params.sortField,
         params.sortOrder,
         params.defaultSearchOperator,
-        undefined, // params.searchFields - commented out
+        undefined,
         params.hasReference,
         params.hasNoReference,
         params.hasReferenceOperator,
@@ -343,6 +342,15 @@ export function registerVlTools(server: ServerBase, kibanaClient: KibanaClient, 
         params.aggs,
         params.space
       );
+      if (result.isError) return result;
+      const tokenCheck = checkTokenLimit(result, maxTokenCall, params.break_token_rule ?? false);
+      if (!tokenCheck.allowed) {
+        return {
+          content: [{ type: "text", text: tokenCheck.error ?? "Token limit exceeded" }],
+          isError: true
+        };
+      }
+      return result;
     }
   );
 }

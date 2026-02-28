@@ -1,7 +1,7 @@
 {
   "name": "@tocharianou/mcp-server-kibana",
   "description": "Kibana MCP Server",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "mcpName": "io.github.TocharianOU/kibana",
   "license": "Apache-2.0",
   "author": "TocharinOU",
@@ -75,6 +75,7 @@
     "express": "^5.1.0",
     "js-yaml": "^4.1.0",
     "json5": "^2.2.3",
+    "tiktoken": "^1.0.22",
     "ts-node": "^10.9.2",
     "zod": "^3.24.2"
   },

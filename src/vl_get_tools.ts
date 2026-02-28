@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ServerBase, KibanaClient, ToolResponse } from './types.js';
+import { checkTokenLimit } from './utils/token-limiter.js';
 
 /**
  * Implementation function for getting a single Kibana saved object by type and ID.
@@ -194,37 +195,47 @@ async function vl_get_saved_object_impl(
 /**
  * Register VL (Visualization Layer) get tools with the MCP server
  */
-export function registerVLGetTools(server: ServerBase, kibanaClient: KibanaClient) {
+export function registerVLGetTools(server: ServerBase, kibanaClient: KibanaClient, maxTokenCall = 20000) {
   // Tool: Get a single Kibana saved object by type and ID
   server.tool(
     "vl_get_saved_object",
     "Get a single Kibana saved object by type and ID. This is a universal tool that can retrieve any type of saved object (dashboard, visualization, index-pattern, search, config, lens, map, tag, canvas-workpad, canvas-element, etc.) by its exact type and ID. Use this when you know the specific object you want to retrieve. PERFORMANCE: This is much faster than searching when you have the exact type and ID.",
     z.object({
       type: z.union([z.string(), z.array(z.string())]).transform(val => {
-        if (Array.isArray(val)) return val[0]; // Take first type for single object retrieval
+        if (Array.isArray(val)) return val[0];
         if (typeof val === 'string') {
           try {
             const parsed = JSON.parse(val);
             return Array.isArray(parsed) ? parsed[0] : parsed;
           } catch {
             const types = val.split(',').map(s => s.trim()).filter(s => s);
-            return types[0]; // Take first type
+            return types[0];
           }
         }
         return val;
       }).describe("REQUIRED: The saved object type. Common types: 'dashboard', 'visualization', 'index-pattern', 'search', 'config', 'lens', 'map', 'tag', 'canvas-workpad', 'canvas-element'. Supports multiple formats: single string 'dashboard', array ['dashboard'], JSON string '[\"dashboard\"]', or comma-separated 'dashboard,visualization' (will use first type for single object retrieval)."),
       id: z.string().describe("REQUIRED: The saved object ID. This is the unique identifier for the specific object you want to retrieve."),
       useResolve: z.boolean().optional().describe("Use resolve API instead of get API. The resolve API can handle legacy URL aliases from object ID migrations. Use this if you're having trouble finding an object that may have had its ID changed during Kibana upgrades. Default: false."),
-      space: z.string().optional().describe("Target Kibana space (optional, defaults to configured space)")
+      space: z.string().optional().describe("Target Kibana space (optional, defaults to configured space)"),
+      break_token_rule: z.boolean().optional().default(false).describe("Set to true to bypass token limits in critical situations. Use sparingly to avoid context overflow.")
     }),
-    async (params: { type: string; id: string; useResolve?: boolean; space?: string }): Promise<ToolResponse> => {
-      return await vl_get_saved_object_impl(
+    async (params: { type: string; id: string; useResolve?: boolean; space?: string; break_token_rule?: boolean }): Promise<ToolResponse> => {
+      const result = await vl_get_saved_object_impl(
         kibanaClient,
         params.type,
         params.id,
         params.useResolve,
         params.space
       );
+      if (result.isError) return result;
+      const tokenCheck = checkTokenLimit(result, maxTokenCall, params.break_token_rule ?? false);
+      if (!tokenCheck.allowed) {
+        return {
+          content: [{ type: "text", text: tokenCheck.error ?? "Token limit exceeded" }],
+          isError: true
+        };
+      }
+      return result;
     }
   );
 }

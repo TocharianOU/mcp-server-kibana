@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ServerBase, KibanaClient, ToolResponse } from "./types";
 import { simplifyEndpointDetail, formatEndpointToMarkdown } from "./openapi-simplifier.js";
+import { checkTokenLimit } from "./utils/token-limiter.js";
 
 // Import API index and search logic
 import fs from 'fs';
@@ -150,7 +151,7 @@ function resolveRef(obj: any, doc: any, seen = new Set()): any {
   return result;
 }
 
-export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient, defaultSpace: string) {
+export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient, defaultSpace: string, maxTokenCall = 20000) {
   // Tool: Get Kibana server status
   server.tool(
     "get_status",
@@ -193,9 +194,10 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
       path: z.string(),
       body: z.any().optional(),
       params: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
-      space: z.string().optional().describe("Target Kibana space (optional, defaults to configured space)")
+      space: z.string().optional().describe("Target Kibana space (optional, defaults to configured space)"),
+      break_token_rule: z.boolean().optional().default(false).describe("Set to true to bypass token limits in critical situations. Use sparingly to avoid context overflow.")
     }),
-    async ({ method, path, body, params, space }): Promise<ToolResponse> => {
+    async ({ method, path, body, params, space, break_token_rule }): Promise<ToolResponse> => {
       try {
         const targetSpace = space || defaultSpace;
         let url = path;
@@ -224,7 +226,7 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
             throw new Error(`Unsupported HTTP method: ${method}`);
         }
 
-        return {
+        const result: ToolResponse = {
           content: [
             {
               type: "text",
@@ -232,6 +234,14 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
             }
           ]
         };
+        const tokenCheck = checkTokenLimit(result, maxTokenCall, break_token_rule ?? false);
+        if (!tokenCheck.allowed) {
+          return {
+            content: [{ type: "text", text: tokenCheck.error ?? "Token limit exceeded" }],
+            isError: true
+          };
+        }
+        return result;
       } catch (error) {
         return {
           content: [

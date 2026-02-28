@@ -293,13 +293,15 @@ export async function createKibanaMcpServer(options: ServerCreationOptions): Pro
     }
   };
 
+  const maxTokenCall = parseInt(process.env.MAX_TOKEN_CALL || "20000", 10);
+
   // Register all tool modules
   const registrations = [
-    registerBaseTools(serverBase, kibanaClient, defaultSpace),
+    registerBaseTools(serverBase, kibanaClient, defaultSpace, maxTokenCall),
     registerPrompts(serverBase, defaultSpace),
     registerResources(serverBase, kibanaClient, defaultSpace),
-    registerVlTools(serverBase, kibanaClient, defaultSpace),
-    registerVLGetTools(serverBase, kibanaClient),
+    registerVlTools(serverBase, kibanaClient, defaultSpace, maxTokenCall),
+    registerVLGetTools(serverBase, kibanaClient, maxTokenCall),
     registerVLDeleteTools(serverBase, kibanaClient),
     registerVLCreateTools(serverBase, kibanaClient),
     registerVLUpdateTools(serverBase, kibanaClient),
