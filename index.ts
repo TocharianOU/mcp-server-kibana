@@ -40,7 +40,8 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
     timeout: 60000, // 60 seconds
     headers: {
       'Content-Type': 'application/json',
-      'kbn-xsrf': 'true'
+      'kbn-xsrf': 'true',
+      'x-elastic-internal-origin': 'kibana'
     },
   };
 
