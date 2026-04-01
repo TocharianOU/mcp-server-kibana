@@ -35,8 +35,15 @@ import { registerAnalysisTools } from "./src/analysis-tools.js";
 
 // Create Kibana client
 function createKibanaClient(config: KibanaConfig): KibanaClient {
+  // Extract origin and base path separately so that axios does not drop
+  // the sub-path when request URLs start with "/".
+  // e.g. KIBANA_URL = "https://host/_plugin/kibana"
+  //   → origin   = "https://host"
+  //   → basePath = "/_plugin/kibana"
+  const parsedUrl = new URL(config.url);
+  const basePath = parsedUrl.pathname.replace(/\/$/, ''); // e.g. "/_plugin/kibana" or ""
   const axiosConfig: any = {
-    baseURL: config.url,
+    baseURL: parsedUrl.origin,   // e.g. "https://host"
     timeout: 60000, // 60 seconds
     headers: {
       'Content-Type': 'application/json',
@@ -71,13 +78,15 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
     }
   }
 
-  // Dynamic URL transformation logic - support specifying space for each call
+  // Dynamic URL transformation logic - support specifying space for each call.
+  // Always prepend basePath so that sub-path installations (e.g. /_plugin/kibana)
+  // are handled correctly regardless of whether the request path starts with "/".
   const buildSpaceAwareUrl = (url: string, space?: string): string => {
     const targetSpace = space || config.defaultSpace;
     if (targetSpace && targetSpace !== 'default' && url.startsWith('/api/')) {
-      return `/s/${targetSpace}${url}`;
+      return `${basePath}/s/${targetSpace}${url}`;
     }
-    return url;
+    return `${basePath}${url}`;
   };
 
   const axiosInstance = axios.create(axiosConfig);
