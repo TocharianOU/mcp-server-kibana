@@ -212,13 +212,13 @@ export async function createKibanaMcpServer(options: ServerCreationOptions): Pro
   const server = new McpServer({
     name,
     version,
-    transport: transport || new StdioServerTransport(),
+    description
+  }, {
     capabilities: {
       tools: {},
       prompts: { listChanged: false },
       resources: {}
-    },
-    description
+    }
   });
 
   // Create an adapter to convert McpServer to ServerBase
@@ -393,7 +393,7 @@ async function main() {
             // Create server for this transport
             const server = await createKibanaMcpServer({
               name: serverName,
-              version: "0.7.3",
+              version: "0.9.0",
               config,
               description: serverDescription
             });
@@ -471,7 +471,7 @@ async function main() {
       
       const server = await createKibanaMcpServer({
         name: serverName,
-        version: "0.7.3",
+        version: "0.9.0",
         config,
         description: serverDescription
       });
