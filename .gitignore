@@ -57,6 +57,8 @@ QUICKSTART.md
 # Release files
 *.tar.gz
 *.tgz
+*.sha256
+*.sha512
 release-tmp/
 test-release/
 

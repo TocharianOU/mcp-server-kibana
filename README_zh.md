@@ -1,6 +1,6 @@
 # Kibana MCP 服务器
-[![npm 版本](https://badge.fury.io/js/@tocharian%2Fmcp-server-kibana.svg)](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
-[![下载量](https://img.shields.io/npm/dm/@tocharian/mcp-server-kibana.svg)](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
+[![npm 版本](https://badge.fury.io/js/@tocharianou%2Fmcp-server-kibana.svg)](https://www.npmjs.com/package/@tocharianou/mcp-server-kibana)
+[![下载量](https://img.shields.io/npm/dm/@tocharianou/mcp-server-kibana.svg)](https://www.npmjs.com/package/@tocharianou/mcp-server-kibana)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/TocharianOU/mcp-server-kibana)
 
 > **API 规范**
@@ -153,10 +153,10 @@
 ### 快速安装
 ```bash
 # 全局安装（推荐）
-npm install -g @tocharian/mcp-server-kibana
+npm install -g @tocharianou/mcp-server-kibana
 
 # 或本地安装
-npm install @tocharian/mcp-server-kibana
+npm install @tocharianou/mcp-server-kibana
 ```
 
 ### 替代方案：从源码安装
@@ -177,7 +177,7 @@ npm run build
 KIBANA_URL=http://your-kibana-server:5601 \
 KIBANA_USERNAME=your-username \
 KIBANA_PASSWORD=your-password \
-npx @tocharian/mcp-server-kibana
+npx @tocharianou/mcp-server-kibana
 ```
 
 ### 方法 2: Claude Desktop 集成（推荐）
@@ -192,7 +192,7 @@ npx @tocharian/mcp-server-kibana
   "mcpServers": {
     "kibana-mcp-server": {
       "command": "npx",
-      "args": ["@tocharian/mcp-server-kibana"],
+      "args": ["@tocharianou/mcp-server-kibana"],
       "env": {
         "KIBANA_URL": "http://your-kibana-server:5601",
         "KIBANA_USERNAME": "your-username",
@@ -215,7 +215,7 @@ MCP_TRANSPORT=http \
 KIBANA_URL=http://your-kibana-server:5601 \
 KIBANA_USERNAME=your-username \
 KIBANA_PASSWORD=your-password \
-npx @tocharian/mcp-server-kibana
+npx @tocharianou/mcp-server-kibana
 
 # 或使用自定义端口和主机
 MCP_TRANSPORT=http \
@@ -224,7 +224,7 @@ MCP_HTTP_HOST=0.0.0.0 \
 KIBANA_URL=http://your-kibana-server:5601 \
 KIBANA_USERNAME=your-username \
 KIBANA_PASSWORD=your-password \
-npx @tocharian/mcp-server-kibana
+npx @tocharianou/mcp-server-kibana
 ```
 
 **HTTP 模式特性：**
@@ -383,7 +383,7 @@ npm run inspector
 
 ## 📦 包信息
 
-- **NPM 包**: [@tocharian/mcp-server-kibana](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
+- **NPM 包**: [@tocharianou/mcp-server-kibana](https://www.npmjs.com/package/@tocharianou/mcp-server-kibana)
 - **GitHub 仓库**: [TocharianOU/mcp-server-kibana](https://github.com/TocharianOU/mcp-server-kibana)
 - **Node.js 要求**: >= 18.0.0
 - **包大小**: ~685KB (解压后 6.4MB)
@@ -397,7 +397,7 @@ npm run inspector
 #### "import: command not found" 错误
 ```bash
 # 确保使用最新版本
-npm install -g @tocharian/mcp-server-kibana@latest
+npm install -g @tocharianou/mcp-server-kibana@latest
 
 # 或尝试直接使用 node
 node $(which mcp-server-kibana)

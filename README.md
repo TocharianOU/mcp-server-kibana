@@ -1,8 +1,8 @@
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/tocharianou-mcp-server-kibana-badge.png)](https://mseep.ai/app/tocharianou-mcp-server-kibana)
 
 # Kibana MCP Server
-[![npm version](https://badge.fury.io/js/@tocharian%2Fmcp-server-kibana.svg)](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
-[![Downloads](https://img.shields.io/npm/dm/@tocharian/mcp-server-kibana.svg)](https://www.npmjs.com/package/@tocharian/mcp-server-kibana)
+[![npm version](https://badge.fury.io/js/@tocharianou%2Fmcp-server-kibana.svg)](https://www.npmjs.com/package/@tocharianou/mcp-server-kibana)
+[![Downloads](https://img.shields.io/npm/dm/@tocharianou/mcp-server-kibana.svg)](https://www.npmjs.com/package/@tocharianou/mcp-server-kibana)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/TocharianOU/mcp-server-kibana)
 
 A Kibana MCP server implementation that allows any MCP-compatible client (such as Claude Desktop) to access your Kibana instance via natural language or programmatic requests.
