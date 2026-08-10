@@ -150,7 +150,7 @@ async function vl_create_saved_object_impl(
         content: [
           {
             type: "text",
-            text: `Conflict error: A saved object with type '${type}' and id '${id}' already exists. Use 'overwrite: true' to replace it, or omit the 'id' parameter to create with auto-generated ID.`
+            text: `Conflict error: A saved object with type '${type}' and id '${id}' already exists. If this call may be a retry of an earlier create, this 409 usually means the original create already succeeded — verify with vl_get_saved_object for this type/id before doing anything else. Use 'overwrite: true' only to intentionally replace the existing object. Do not fall back to omitting 'id': an auto-generated id would create a second object instead of recognizing the first — a stable caller-chosen id is what makes retries safe.`
           }
         ],
         isError: true
