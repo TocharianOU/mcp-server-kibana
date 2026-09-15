@@ -188,7 +188,12 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
   // Tool: Execute custom API request
   server.tool(
     "execute_kb_api",
-    `Execute a custom API request for Kibana with multi-space support`,
+    `Execute a custom API request for Kibana with multi-space support.
+
+RETRY SAFETY: this tool can reach any write endpoint. A POST retried after a
+timeout or dropped response can create a duplicate — prefer a caller-chosen
+stable id (or the vl_* tool for that object type, which documents the safe
+pattern) over letting the server auto-generate one.`,
     z.object({
       method: z.enum(['GET', 'POST', 'PUT', 'DELETE']),
       path: z.string(),

@@ -35,7 +35,7 @@ Key capabilities:
 4. Always inform the user which space an operation will target
 
 Important: When creating dashboards, saved objects, or other Kibana resources, you can specify the target space in the tool parameters. For example:
-- execute_api({method: "POST", path: "/api/saved_objects/dashboard", space: "marketing-team", body: {...}})
+- vl_create_saved_object({type: "dashboard", id: "<caller-chosen-stable-id>", space: "marketing-team", attributes: {...}})
 
 ${input.context ? `\n[Context Information]\n${input.context}` : ''}
 
