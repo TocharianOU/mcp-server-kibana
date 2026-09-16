@@ -204,6 +204,12 @@ pattern) over letting the server auto-generate one.`,
     }),
     async ({ method, path, body, params, space, break_token_rule }): Promise<ToolResponse> => {
       try {
+        if (!path.startsWith('/') || path.startsWith('//')) {
+          return {
+            content: [{ type: "text", text: `Error: 'path' must be a Kibana API path starting with a single '/' (e.g. /api/status), not a full or protocol-relative URL. Got: ${path}` }],
+            isError: true
+          };
+        }
         const targetSpace = space || defaultSpace;
         let url = path;
         if (params) {

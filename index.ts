@@ -44,7 +44,9 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
   const basePath = parsedUrl.pathname.replace(/\/$/, ''); // e.g. "/_plugin/kibana" or ""
   const axiosConfig: any = {
     baseURL: parsedUrl.origin,   // e.g. "https://host"
-    timeout: 60000, // 60 seconds
+    // Absolute request URLs would otherwise bypass baseURL and send Kibana credentials to another host.
+    allowAbsoluteUrls: false,
+    timeout: config.timeout || 60000,
     headers: {
       'Content-Type': 'application/json',
       'kbn-xsrf': 'true',
@@ -334,7 +336,7 @@ async function main() {
       cookies: process.env.KIBANA_COOKIES,
       apiKey: process.env.KIBANA_API_KEY,
       caCert: process.env.KIBANA_CA_CERT,
-      timeout: parseInt(process.env.KIBANA_TIMEOUT || "30000", 10),
+      timeout: parseInt(process.env.KIBANA_TIMEOUT || "60000", 10),
       maxRetries: parseInt(process.env.KIBANA_MAX_RETRIES || "3", 10),
       defaultSpace: process.env.KIBANA_DEFAULT_SPACE || 'default'
     };
@@ -393,7 +395,7 @@ async function main() {
             // Create server for this transport
             const server = await createKibanaMcpServer({
               name: serverName,
-              version: "0.10.1",
+              version: "0.10.2",
               config,
               description: serverDescription
             });
@@ -471,7 +473,7 @@ async function main() {
       
       const server = await createKibanaMcpServer({
         name: serverName,
-        version: "0.10.1",
+        version: "0.10.2",
         config,
         description: serverDescription
       });

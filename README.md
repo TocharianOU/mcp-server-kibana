@@ -134,7 +134,7 @@ Health check: `http://localhost:3000/health`
 |----------|-------------|---------|
 | `KIBANA_DEFAULT_SPACE` | Default Kibana space | `default` |
 | `KIBANA_CA_CERT` | CA certificate path | - |
-| `KIBANA_TIMEOUT` | Request timeout (ms) | `30000` |
+| `KIBANA_TIMEOUT` | Request timeout (ms) | `60000` |
 | `MCP_TRANSPORT` | Transport mode | `stdio` |
 | `MCP_HTTP_PORT` | HTTP server port | `3000` |
 | `MCP_HTTP_HOST` | HTTP server host | `localhost` |
