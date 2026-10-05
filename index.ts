@@ -31,6 +31,7 @@ import { registerVLDeleteTools } from "./src/vl_delete_tools.js";
 import { registerVLCreateTools } from "./src/vl_create_tools.js";
 import { registerVLUpdateTools } from "./src/vl_update_tools.js";
 import { registerAnalysisTools } from "./src/analysis-tools.js";
+import { registerElasticsearchSearchTools } from "./src/elasticsearch-search-tools.js";
 
 
 // Create Kibana client
@@ -85,7 +86,7 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
   // are handled correctly regardless of whether the request path starts with "/".
   const buildSpaceAwareUrl = (url: string, space?: string): string => {
     const targetSpace = space || config.defaultSpace;
-    if (targetSpace && targetSpace !== 'default' && url.startsWith('/api/')) {
+    if (targetSpace && targetSpace !== 'default' && (url.startsWith('/api/') || url.startsWith('/internal/'))) {
       return `${basePath}/s/${targetSpace}${url}`;
     }
     return `${basePath}${url}`;
@@ -243,8 +244,10 @@ export async function createKibanaMcpServer(options: ServerCreationOptions): Pro
           }
         });
       } else {
-        const [description, schema, handler] = args;
-        server.tool(name, description, schema.shape, async (args: any, extra: RequestHandlerExtra) => {
+        const [description, schema] = args;
+        const annotations = args.length === 4 ? args[2] : undefined;
+        const handler = args.length === 4 ? args[3] : args[2];
+        const wrappedHandler = async (args: any, extra: RequestHandlerExtra) => {
           try {
             const result = await Promise.resolve(handler(args, extra));
             return result;
@@ -266,7 +269,9 @@ export async function createKibanaMcpServer(options: ServerCreationOptions): Pro
               isError: true
             };
           }
-        });
+        };
+        if (annotations) server.tool(name, description, schema.shape, annotations, wrappedHandler);
+        else server.tool(name, description, schema.shape, wrappedHandler);
       }
     },
     
@@ -317,7 +322,8 @@ export async function createKibanaMcpServer(options: ServerCreationOptions): Pro
     registerVLDeleteTools(serverBase, kibanaClient),
     registerVLCreateTools(serverBase, kibanaClient),
     registerVLUpdateTools(serverBase, kibanaClient),
-    registerAnalysisTools(serverBase, kibanaClient, defaultSpace)
+    registerAnalysisTools(serverBase, kibanaClient, defaultSpace),
+    registerElasticsearchSearchTools(serverBase, kibanaClient, defaultSpace, maxTokenCall)
   ];
 
   await Promise.all(registrations);
