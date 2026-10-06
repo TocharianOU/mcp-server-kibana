@@ -80,6 +80,7 @@ export interface ServerBase {
   tool: {
     (name: string, cb: (extra: RequestHandlerExtra) => Promise<ToolResponse> | ToolResponse): void;
     (name: string, description: string, schema: any, handler: (args: any, extra: RequestHandlerExtra) => Promise<ToolResponse> | ToolResponse): void;
+    (name: string, description: string, schema: any, annotations: Record<string, unknown>, handler: (args: any, extra: RequestHandlerExtra) => Promise<ToolResponse> | ToolResponse): void;
   };
   
   prompt: {
@@ -124,4 +125,4 @@ export interface ServerCreationOptions {
   transport?: any;
   config: KibanaConfig;
   description?: string;
-} 
+}

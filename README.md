@@ -147,6 +147,7 @@ Health check: `http://localhost:3000/health`
 ### Base Tools
 - `get_status` - Get Kibana server status
 - `execute_kb_api` - Execute custom Kibana API requests
+- `search_elasticsearch` - Search Elasticsearch documents and logs through Kibana without using the Dev Tools Console proxy
 - `get_available_spaces` - List available Kibana spaces
 - `search_kibana_api_paths` - Search API endpoints
 - `list_all_kibana_api_paths` - List all API endpoints
@@ -168,6 +169,55 @@ Health check: `http://localhost:3000/health`
 - `check_dashboard_health` - Dashboard health check
 - `scan_all_dashboards_health` - Batch health scanning
 
+### Elasticsearch Data Search
+
+Use `search_elasticsearch` when you need to search documents, application logs, traces, or aggregations in Elasticsearch. It sends Query DSL through Kibana's `/internal/search/es` route instead of the Dev Tools Console proxy.
+
+This is useful when a Kibana user can read the target indices but does not have the **Dev Tools** Kibana privilege. In that case `/api/console/proxy` can return `403` even though normal Elasticsearch searches are allowed.
+
+Example tool arguments for a bounded log search:
+
+```json
+{
+  "index": "application-logs-*",
+  "body": {
+    "size": 20,
+    "_source": [
+      "@timestamp",
+      "message",
+      "trace.id",
+      "service.name"
+    ],
+    "sort": [
+      { "@timestamp": "desc" }
+    ],
+    "query": {
+      "bool": {
+        "filter": [
+          {
+            "range": {
+              "@timestamp": {
+                "gte": "2025-01-15T10:00:00Z",
+                "lt": "2025-01-15T11:00:00Z"
+              }
+            }
+          },
+          {
+            "term": {
+              "service.name.keyword": "example-service"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+For high-volume logs, start with a small time window and a small `size`. After finding a trace or correlation id, use that value in a second narrow search instead of repeatedly scanning a broad time range. Use `_source` to keep only fields needed for the current investigation.
+
+The tool rejects wildcard-only index segments such as `*`, `**`, or `_all` (including inside comma-separated index expressions), an empty search body, and `body.size` above 100. String `size` values are coerced and validated as numbers. The endpoint is an internal Kibana API, so compatibility should be verified after major Kibana upgrades.
+
 ---
 
 ## 📖 Resources
@@ -186,6 +236,12 @@ Health check: `http://localhost:3000/health`
 - "What is the status of my Kibana server?"
 - "List all available Kibana spaces"
 - "Show me all API endpoints related to dashboards"
+
+### Elasticsearch & Logs
+- "Search the production logs for errors from service X in the last hour"
+- "Find this trace id and show the surrounding log events in chronological order"
+- "Search index application-logs-* using this Elasticsearch Query DSL"
+- "Aggregate error counts by service for this time range"
 
 ### Saved Objects
 - "Search for all dashboards"
@@ -217,6 +273,7 @@ Health check: `http://localhost:3000/health`
 - **"import: command not found"**: Update to latest version
 - **Authentication failed**: Verify credentials and permissions
 - **SSL errors**: Check CA certificate or disable SSL validation
+- **403 from `/api/console/proxy` while searching Elasticsearch**: Use `search_elasticsearch`. The Console proxy can require the Kibana Dev Tools privilege even when the user has permission to read the target indices.
 
 ---
 

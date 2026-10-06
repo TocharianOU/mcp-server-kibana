@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ServerBase, KibanaClient, ToolResponse } from "./types";
 import { simplifyEndpointDetail, formatEndpointToMarkdown } from "./openapi-simplifier.js";
+import { formatKibanaError } from "./utils/kibana-error.js";
 import { checkTokenLimit } from "./utils/token-limiter.js";
 
 // Import API index and search logic
@@ -176,7 +177,7 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
           content: [
             {
               type: "text",
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`
+              text: formatKibanaError(error)
             }
           ],
           isError: true
@@ -189,6 +190,12 @@ export function registerBaseTools(server: ServerBase, kibanaClient: KibanaClient
   server.tool(
     "execute_kb_api",
     `Execute a custom API request for Kibana with multi-space support.
+
+For Elasticsearch document or log searches, use search_elasticsearch instead.
+Do not use /api/console/proxy for Elasticsearch searches: that Console endpoint
+can require Dev Tools privileges even when the configured user can read the
+target indices. Do not use this generic tool to rediscover an Elasticsearch
+search route when search_elasticsearch already provides the supported workflow.
 
 RETRY SAFETY: this tool can reach any write endpoint. A POST retried after a
 timeout or dropped response can create a duplicate — prefer a caller-chosen
@@ -258,7 +265,7 @@ pattern) over letting the server auto-generate one.`,
           content: [
             {
               type: "text",
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`
+              text: formatKibanaError(error)
             }
           ],
           isError: true
@@ -270,7 +277,7 @@ pattern) over letting the server auto-generate one.`,
   // Tool: Search Kibana API endpoints (by keyword)
   server.tool(
     "search_kibana_api_paths",
-    `Search Kibana API endpoints by keyword`,
+    `Search documented Kibana OpenAPI endpoints by keyword. This index does not necessarily contain Kibana internal routes. Do not use this tool to discover how to search Elasticsearch documents or logs; use search_elasticsearch for that.`,
     z.object({
       search: z.string().describe('Search keyword for filtering API endpoints')
     }),
@@ -421,7 +428,7 @@ pattern) over letting the server auto-generate one.`,
           content: [
             {
               type: "text",
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`
+              text: formatKibanaError(error)
             }
           ],
           isError: true
