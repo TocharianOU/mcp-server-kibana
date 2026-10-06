@@ -216,7 +216,7 @@ Example tool arguments for a bounded log search:
 
 For high-volume logs, start with a small time window and a small `size`. After finding a trace or correlation id, use that value in a second narrow search instead of repeatedly scanning a broad time range. Use `_source` to keep only fields needed for the current investigation.
 
-The tool rejects a bare `*` or `_all` index, an empty search body, and `body.size` above 100. The endpoint is an internal Kibana API, so compatibility should be verified after major Kibana upgrades.
+The tool rejects wildcard-only index segments such as `*`, `**`, or `_all` (including inside comma-separated index expressions), an empty search body, and `body.size` above 100. String `size` values are coerced and validated as numbers. The endpoint is an internal Kibana API, so compatibility should be verified after major Kibana upgrades.
 
 ---
 

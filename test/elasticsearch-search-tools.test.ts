@@ -120,7 +120,16 @@ describe('search_elasticsearch', () => {
     expect(result.content[0].text).toContain('[Space: ops]');
   });
 
-  test.each(['*', '_all', '  _all  '])('rejects unbounded index %s', async (index) => {
+  test.each([
+    '*',
+    '**',
+    '_all',
+    '  _all  ',
+    '*,*',
+    '*,-zzz',
+    'some-index,*',
+    'some-index,_all',
+  ])('rejects unbounded index expression %s', async (index) => {
     let called = false;
     const handler = registerSearchHandler(clientWithPost(async () => {
       called = true;
@@ -134,8 +143,29 @@ describe('search_elasticsearch', () => {
     });
 
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('explicit index or bounded index pattern');
+    expect(result.content[0].text).toContain('wildcard-only segments');
     expect(called).toBe(false);
+  });
+
+  test.each([
+    'application-logs-*',
+    'application-logs-*,audit-*',
+    'application-*,-application-secret-*',
+  ])('accepts bounded index expression %s', async (index) => {
+    let called = false;
+    const handler = registerSearchHandler(clientWithPost(async () => {
+      called = true;
+      return {};
+    }));
+
+    const result = await handler({
+      index,
+      body: { size: 1, query: { match_all: {} } },
+      break_token_rule: false,
+    });
+
+    expect(result.isError).not.toBe(true);
+    expect(called).toBe(true);
   });
 
   test('rejects result size above 100 before calling Kibana', async () => {
@@ -154,6 +184,56 @@ describe('search_elasticsearch', () => {
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('between 0 and 100');
     expect(called).toBe(false);
+  });
+
+  test('rejects string result size above 100 before calling Kibana', async () => {
+    let called = false;
+    const handler = registerSearchHandler(clientWithPost(async () => {
+      called = true;
+      return {};
+    }));
+
+    const result = await handler({
+      index: 'application-logs-*',
+      body: { size: '150', query: { match_all: {} } },
+      break_token_rule: false,
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('between 0 and 100');
+    expect(called).toBe(false);
+  });
+
+  test('coerces a valid string result size to a number', async () => {
+    const calls: any[] = [];
+    const handler = registerSearchHandler(clientWithPost(async (url, data, options) => {
+      calls.push({ url, data, options });
+      return {};
+    }));
+
+    const result = await handler({
+      index: 'application-logs-*',
+      body: { size: '20', query: { match_all: {} } },
+      break_token_rule: false,
+    });
+
+    expect(result.isError).not.toBe(true);
+    expect(calls[0].data.params.body.size).toBe(20);
+  });
+
+  test('coerces and validates size in the input schema', () => {
+    const valid = elasticsearchSearchInputSchema.safeParse({
+      index: 'application-logs-*',
+      body: { size: '20', query: { match_all: {} } },
+    });
+    const invalid = elasticsearchSearchInputSchema.safeParse({
+      index: 'application-logs-*',
+      body: { size: '150', query: { match_all: {} } },
+    });
+
+    expect(valid.success).toBe(true);
+    if (valid.success) expect(valid.data.body.size).toBe(20);
+    expect(invalid.success).toBe(false);
   });
 
   test('returns actionable token-limit guidance', async () => {

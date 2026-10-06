@@ -4,14 +4,23 @@ import type { KibanaClient, ServerBase, ToolResponse } from "./types";
 import { formatKibanaError } from "./utils/kibana-error.js";
 import { checkTokenLimit } from "./utils/token-limiter.js";
 
-export const elasticsearchSearchBodySchema = z.record(z.any()).refine(
+export const elasticsearchSearchBodySchema = z.object({
+  size: z.coerce.number().int().min(0).max(100).optional()
+}).passthrough().refine(
   (body) => Object.keys(body).length > 0,
   "Search body must not be empty"
 );
 
+function hasUnboundedIndexSegment(index: string): boolean {
+  return index.split(',').some((rawSegment) => {
+    const segment = rawSegment.trim().toLowerCase();
+    return segment === "_all" || /^\*+$/.test(segment);
+  });
+}
+
 export const elasticsearchSearchInputSchema = z.object({
   index: z.string().trim().min(1).describe(
-    "REQUIRED: Elasticsearch index or bounded index pattern, for example 'application-logs-*'. Do not use '*' or '_all'."
+    "REQUIRED: Elasticsearch index or bounded index pattern, for example 'application-logs-*'. Wildcard-only segments such as '*', '**', or '_all' are not allowed."
   ),
   body: elasticsearchSearchBodySchema.describe(
     `REQUIRED: Elasticsearch _search request body using Query DSL, not Kibana KQL. Translate KQL-style user intent into Query DSL before calling this tool. For logs, normally include: a small size (for example 20), a range filter on the timestamp field, useful _source fields only, and sort by timestamp when order matters. Example: {"size":20,"_source":["@timestamp","message","trace.id"],"sort":[{"@timestamp":"desc"}],"query":{"bool":{"filter":[{"range":{"@timestamp":{"gte":"2025-01-15T10:00:00Z","lt":"2025-01-15T11:00:00Z"}}}]}}}. After finding a trace or correlation id, prefer a second narrow search for that id and a small time window instead of repeatedly scanning a broad range.`
@@ -53,7 +62,8 @@ SEARCH STRATEGY FOR LOGS:
 The body is Elasticsearch Query DSL, not Kibana KQL. If the user describes a
 filter in KQL terms, translate the intent to Query DSL before calling the tool.
 
-A bare '*' or '_all' index, an empty body, and body.size > 100 are rejected.
+A wildcard-only index segment ('*', '**', '_all'), an empty body, and
+body.size > 100 are rejected.
 Avoid broad match_all searches. Aggregations are supported through the same
 body. The returned hits preserve the original _source, including dynamic/custom
 properties.
@@ -69,24 +79,28 @@ change between Kibana versions.`,
     async ({ index, body, space, break_token_rule }): Promise<ToolResponse> => {
       try {
         const normalizedIndex = index.trim();
-        if (normalizedIndex === "*" || normalizedIndex.toLowerCase() === "_all") {
+        if (hasUnboundedIndexSegment(normalizedIndex)) {
           return {
             content: [{
               type: "text",
-              text: "Error: use an explicit index or bounded index pattern; '*' and '_all' are not allowed"
+              text: "Error: use explicit bounded index patterns; wildcard-only segments ('*', '**', '_all') are not allowed"
             }],
             isError: true
           };
         }
 
-        if (typeof body.size === "number" && (!Number.isInteger(body.size) || body.size < 0 || body.size > 100)) {
-          return {
-            content: [{
-              type: "text",
-              text: "Error: body.size must be an integer between 0 and 100"
-            }],
-            isError: true
-          };
+        if (body.size !== undefined) {
+          const parsedSize = z.coerce.number().int().min(0).max(100).safeParse(body.size);
+          if (!parsedSize.success) {
+            return {
+              content: [{
+                type: "text",
+                text: "Error: body.size must be an integer between 0 and 100"
+              }],
+              isError: true
+            };
+          }
+          body.size = parsedSize.data;
         }
 
         const targetSpace = space || defaultSpace;
