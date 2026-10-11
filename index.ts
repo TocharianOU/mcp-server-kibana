@@ -3,10 +3,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { hostHeaderValidation } from "@modelcontextprotocol/sdk/server/middleware/hostHeaderValidation.js";
 import express from "express";
 import { randomUUID } from "crypto";
 import axios, { AxiosError } from "axios";
 import fs from "fs";
+import https from "https";
 import { z } from "zod";
 import { 
   ServerBase, 
@@ -32,6 +34,7 @@ import { registerVLCreateTools } from "./src/vl_create_tools.js";
 import { registerVLUpdateTools } from "./src/vl_update_tools.js";
 import { registerAnalysisTools } from "./src/analysis-tools.js";
 import { registerElasticsearchSearchTools } from "./src/elasticsearch-search-tools.js";
+import { allowedHostnames, bearerAuth, isLoopbackHost } from "./src/utils/http-auth.js";
 
 
 // Create Kibana client
@@ -73,7 +76,7 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
   // Add CA certificate
   if (config.caCert) {
     try {
-      axiosConfig.httpsAgent = new (require("https").Agent)({
+      axiosConfig.httpsAgent = new https.Agent({
         ca: fs.readFileSync(config.caCert),
       });
     } catch (error) {
@@ -374,6 +377,25 @@ async function main() {
         res.json({ status: 'ok', transport: 'streamable-http' });
       });
 
+      // Every /mcp session acts with the configured Kibana credentials, so the
+      // endpoint is guarded: Host validation stops DNS rebinding against a
+      // loopback bind, and the bearer token authenticates remote clients.
+      const bearerToken = process.env.MCP_BEARER_TOKEN?.trim();
+      const hostnames = allowedHostnames(httpHost, process.env.MCP_ALLOWED_HOSTS);
+      if (hostnames) {
+        app.use('/mcp', hostHeaderValidation(hostnames));
+      }
+      if (bearerToken) {
+        app.use('/mcp', bearerAuth(bearerToken));
+        process.stderr.write(`HTTP mode: bearer token authentication enabled\n`);
+      } else if (!isLoopbackHost(httpHost)) {
+        process.stderr.write(
+          `WARNING: HTTP mode is listening on ${httpHost} without MCP_BEARER_TOKEN. ` +
+          `Anyone who can reach this port can use the configured Kibana credentials. ` +
+          `Set MCP_BEARER_TOKEN, or bind to localhost.\n`
+        );
+      }
+
       // MCP endpoint
       app.post('/mcp', async (req, res) => {
         const sessionId = req.headers['mcp-session-id'] as string | undefined;
@@ -401,7 +423,7 @@ async function main() {
             // Create server for this transport
             const server = await createKibanaMcpServer({
               name: serverName,
-              version: "0.11.0",
+              version: "0.11.1",
               config,
               description: serverDescription
             });
@@ -479,7 +501,7 @@ async function main() {
       
       const server = await createKibanaMcpServer({
         name: serverName,
-        version: "0.11.0",
+        version: "0.11.1",
         config,
         description: serverDescription
       });

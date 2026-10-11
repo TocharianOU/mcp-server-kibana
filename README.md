@@ -91,6 +91,22 @@ npx @tocharianou/mcp-server-kibana
 Access at: `http://localhost:3000/mcp`  
 Health check: `http://localhost:3000/health`
 
+**Securing HTTP mode.** Every session on `/mcp` acts with the Kibana credentials the server was started with, so treat the endpoint as sensitive:
+
+- By default the server listens on `localhost` only and rejects requests whose `Host` header is not a loopback name (DNS rebinding protection).
+- To accept remote clients, set `MCP_BEARER_TOKEN`. Clients must then send `Authorization: Bearer <token>` on every `/mcp` request. `/health` stays open.
+- Binding to a non-loopback address (`MCP_HTTP_HOST=0.0.0.0`) without `MCP_BEARER_TOKEN` logs a warning at startup: anyone who can reach the port can use your Kibana credentials.
+- Behind a reverse proxy that forwards its public `Host` header to a localhost-bound server, list that hostname in `MCP_ALLOWED_HOSTS`.
+
+```bash
+MCP_TRANSPORT=http \
+MCP_HTTP_HOST=0.0.0.0 \
+MCP_BEARER_TOKEN="$(openssl rand -hex 32)" \
+KIBANA_URL=http://localhost:5601 \
+KIBANA_API_KEY=your-api-key \
+npx @tocharianou/mcp-server-kibana
+```
+
 ---
 
 ## ✨ Features
@@ -138,6 +154,8 @@ Health check: `http://localhost:3000/health`
 | `MCP_TRANSPORT` | Transport mode | `stdio` |
 | `MCP_HTTP_PORT` | HTTP server port | `3000` |
 | `MCP_HTTP_HOST` | HTTP server host | `localhost` |
+| `MCP_BEARER_TOKEN` | HTTP mode: require `Authorization: Bearer <token>` on `/mcp` | - |
+| `MCP_ALLOWED_HOSTS` | HTTP mode: extra hostnames accepted in the `Host` header (comma-separated) | - |
 | `NODE_TLS_REJECT_UNAUTHORIZED` | Disable SSL validation | `1` |
 
 ---
@@ -147,7 +165,7 @@ Health check: `http://localhost:3000/health`
 ### Base Tools
 - `get_status` - Get Kibana server status
 - `execute_kb_api` - Execute custom Kibana API requests
-- `search_elasticsearch` - Search Elasticsearch documents and logs through Kibana without using the Dev Tools Console proxy
+- `search_elasticsearch` - Search Elasticsearch documents and logs through Kibana's search API, within the user's Elasticsearch index privileges
 - `get_available_spaces` - List available Kibana spaces
 - `search_kibana_api_paths` - Search API endpoints
 - `list_all_kibana_api_paths` - List all API endpoints
@@ -173,7 +191,9 @@ Health check: `http://localhost:3000/health`
 
 Use `search_elasticsearch` when you need to search documents, application logs, traces, or aggregations in Elasticsearch. It sends Query DSL through Kibana's `/internal/search/es` route instead of the Dev Tools Console proxy.
 
-This is useful when a Kibana user can read the target indices but does not have the **Dev Tools** Kibana privilege. In that case `/api/console/proxy` can return `403` even though normal Elasticsearch searches are allowed.
+The tool is read-only and does not widen data access: Elasticsearch enforces the configured user's index privileges on every search, exactly as it does for Discover and dashboards. Indices the user cannot read return no results.
+
+It exists because the Dev Tools Console proxy (`/api/console/proxy`) is gated by a separate Kibana privilege, since the Console can call any Elasticsearch API including write and admin endpoints. A user who can read the target indices but has no **Dev Tools** privilege gets `403` from the Console proxy; this tool gives that user search, and nothing more. If your Kibana administrators rely on withholding Dev Tools to block ad-hoc queries from an account, be aware that this tool allows Query DSL searches for it.
 
 Example tool arguments for a bounded log search:
 
