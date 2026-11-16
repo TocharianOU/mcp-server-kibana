@@ -35,6 +35,7 @@ import { registerVLUpdateTools } from "./src/vl_update_tools.js";
 import { registerAnalysisTools } from "./src/analysis-tools.js";
 import { registerElasticsearchSearchTools } from "./src/elasticsearch-search-tools.js";
 import { allowedHostnames, bearerAuth, isLoopbackHost } from "./src/utils/http-auth.js";
+import { normalizeProxyUrl, proxyAxiosConfig, redactProxyUrl } from "./src/utils/proxy.js";
 
 
 // Create Kibana client
@@ -74,14 +75,27 @@ function createKibanaClient(config: KibanaConfig): KibanaClient {
   }
 
   // Add CA certificate
+  const tlsOptions: https.AgentOptions = {};
   if (config.caCert) {
     try {
-      axiosConfig.httpsAgent = new https.Agent({
-        ca: fs.readFileSync(config.caCert),
-      });
+      tlsOptions.ca = fs.readFileSync(config.caCert);
+      axiosConfig.httpsAgent = new https.Agent(tlsOptions);
     } catch (error) {
       throw new KibanaError("Failed to load CA certificate", undefined, error);
     }
+  }
+
+  // Route all requests through a proxy (HTTP(S) or SOCKS5). The TLS options,
+  // e.g. the CA certificate, still apply to the connection to Kibana.
+  let proxyUrl: string | undefined;
+  try {
+    proxyUrl = normalizeProxyUrl(config.proxy);
+  } catch (error) {
+    throw new KibanaError(error instanceof Error ? error.message : String(error));
+  }
+  if (proxyUrl) {
+    Object.assign(axiosConfig, proxyAxiosConfig(proxyUrl, tlsOptions));
+    process.stderr.write(`Routing Kibana requests through proxy ${redactProxyUrl(proxyUrl)}\n`);
   }
 
   // Dynamic URL transformation logic - support specifying space for each call.
@@ -345,6 +359,7 @@ async function main() {
       cookies: process.env.KIBANA_COOKIES,
       apiKey: process.env.KIBANA_API_KEY,
       caCert: process.env.KIBANA_CA_CERT,
+      proxy: process.env.KIBANA_PROXY,
       timeout: parseInt(process.env.KIBANA_TIMEOUT || "60000", 10),
       maxRetries: parseInt(process.env.KIBANA_MAX_RETRIES || "3", 10),
       defaultSpace: process.env.KIBANA_DEFAULT_SPACE || 'default'

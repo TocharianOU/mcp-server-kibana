@@ -129,6 +129,7 @@
 | `KIBANA_COOKIES`                 | Kibana 会话 cookies（用于 cookie 认证）      | 否*      |
 | `KIBANA_DEFAULT_SPACE`           | 默认 Kibana 空间（默认: 'default'）           | 否       |
 | `KIBANA_CA_CERT`                 | CA 证书路径（可选，用于 SSL 验证）           | 否       |
+| `KIBANA_PROXY`                   | 通过代理访问 Kibana（可选），支持 `http://`、`https://`、`socks5://`、`socks5h://`，例如 `socks5h://127.0.0.1:1080` | 否       |
 | `KIBANA_TIMEOUT`                 | 请求超时时间（毫秒，默认 30000）             | 否       |
 | `KIBANA_MAX_RETRIES`             | 最大请求重试次数（默认 3）                   | 否       |
 | `NODE_TLS_REJECT_UNAUTHORIZED`   | 设为 `0` 可禁用 SSL 证书校验（谨慎使用）     | 否       |

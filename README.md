@@ -150,6 +150,7 @@ npx @tocharianou/mcp-server-kibana
 |----------|-------------|---------|
 | `KIBANA_DEFAULT_SPACE` | Default Kibana space | `default` |
 | `KIBANA_CA_CERT` | CA certificate path | - |
+| `KIBANA_PROXY` | Route all Kibana requests through a proxy. Schemes: `http://`, `https://`, `socks5://`, `socks5h://` (see [Proxy](#proxy)) | - |
 | `KIBANA_TIMEOUT` | Request timeout (ms) | `60000` |
 | `MCP_TRANSPORT` | Transport mode | `stdio` |
 | `MCP_HTTP_PORT` | HTTP server port | `3000` |
@@ -157,6 +158,27 @@ npx @tocharianou/mcp-server-kibana
 | `MCP_BEARER_TOKEN` | HTTP mode: require `Authorization: Bearer <token>` on `/mcp` | - |
 | `MCP_ALLOWED_HOSTS` | HTTP mode: extra hostnames accepted in the `Host` header (comma-separated) | - |
 | `NODE_TLS_REJECT_UNAUTHORIZED` | Disable SSL validation | `1` |
+
+### Proxy
+
+Set `KIBANA_PROXY` when Kibana is only reachable through a proxy, for example a bastion host with an SSH dynamic port forward:
+
+```bash
+ssh -N -D 1080 bastion
+```
+
+```json
+"env": {
+  "KIBANA_URL": "https://kibana.internal.example:5601",
+  "KIBANA_API_KEY": "<API_KEY>",
+  "KIBANA_PROXY": "socks5h://127.0.0.1:1080"
+}
+```
+
+- Supported schemes: `http://`, `https://`, `socks5://` and `socks5h://`. Credentials can be part of the URL (`socks5h://<user>:<password>@<host>:<port>`).
+- Use `socks5h` when the Kibana host name only resolves on the proxy side; with `socks5` it is resolved locally.
+- `KIBANA_CA_CERT` still applies to the TLS connection to Kibana.
+- `KIBANA_PROXY` takes precedence over `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY`. Without it, HTTP(S) proxies from those variables keep working as before; they do not support SOCKS.
 
 ---
 
