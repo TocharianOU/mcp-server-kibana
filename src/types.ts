@@ -27,6 +27,7 @@ export const KibanaConfigSchema = z.object({
   cookies: z.string().optional(),
   apiKey: z.string().optional(),
   caCert: z.string().optional(),
+  proxy: z.string().optional(),
   timeout: z.number().optional().default(60000),
   maxRetries: z.number().optional().default(3),
   defaultSpace: z.string().optional().default('default'),
