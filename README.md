@@ -178,6 +178,7 @@ ssh -N -D 1080 bastion
 - Supported schemes: `http://`, `https://`, `socks5://` and `socks5h://`. Credentials can be part of the URL (`socks5h://<user>:<password>@<host>:<port>`).
 - Use `socks5h` when the Kibana host name only resolves on the proxy side; with `socks5` it is resolved locally.
 - `KIBANA_CA_CERT` still applies to the TLS connection to Kibana.
+- With an `https://` proxy, `KIBANA_CA_CERT` is also used to verify the proxy's own certificate. If the proxy's certificate is issued by a different CA, put both CA certificates in the same file.
 - `KIBANA_PROXY` takes precedence over `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY`. Without it, HTTP(S) proxies from those variables keep working as before; they do not support SOCKS.
 
 ---
