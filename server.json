@@ -8,13 +8,13 @@
     "url": "https://github.com/TocharianOU/mcp-server-kibana",
     "source": "github"
   },
-      "version": "0.11.1",
+      "version": "0.12.0",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@tocharianou/mcp-server-kibana",
-      "version": "0.11.1",
+      "version": "0.12.0",
       "transport": {
         "type": "stdio"
       },
@@ -44,6 +44,13 @@
           "isRequired": false,
           "isSecret": true,
           "format": "string"
+        },
+        {
+          "name": "KIBANA_PROXY",
+          "description": "Optional proxy for all Kibana requests: http://, https://, socks5:// or socks5h:// (e.g. socks5h://127.0.0.1:1080)",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
         }
       ]
     },
@@ -51,7 +58,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@tocharianou/mcp-server-kibana",
-      "version": "0.11.1",
+      "version": "0.12.0",
       "transport": {
         "type": "streamable-http",
         "url": "http://localhost:{MCP_HTTP_PORT}/mcp"
@@ -104,6 +111,13 @@
           "isRequired": false,
           "isSecret": true,
           "format": "string"
+        },
+        {
+          "name": "KIBANA_PROXY",
+          "description": "Optional proxy for all Kibana requests: http://, https://, socks5:// or socks5h:// (e.g. socks5h://127.0.0.1:1080)",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
         }
       ]
     }
@@ -111,7 +125,7 @@
   "_meta": {
     "io.modelcontextprotocol.registry/publisher-provided": {
       "tool": "manual",
-          "version": "0.11.1",
+          "version": "0.12.0",
       "features": {
         "openapi_based": true,
         "dynamic_api_discovery": true,

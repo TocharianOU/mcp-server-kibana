@@ -380,14 +380,14 @@ export function registerVLUpdateTools(server: ServerBase, kibanaClient: KibanaCl
         return val;
       }).describe("REQUIRED: The saved object type. Common types: 'dashboard', 'visualization', 'index-pattern', 'search', 'config', 'lens', 'map', 'tag', 'canvas-workpad', 'canvas-element'. Supports multiple formats but will use first type for single object update."),
       id: z.string().describe("REQUIRED: The saved object ID. This is the unique identifier for the object you want to update."),
-      attributes: z.record(z.any()).describe("REQUIRED: Object containing the attributes to update. Only specified attributes will be changed (partial update). Common fields: 'title', 'description'. Type-specific fields: Dashboard: 'panelsJSON', 'timeRestore'. Visualization: 'visState', 'uiStateJSON'. All JSON fields should be strings."),
+      attributes: z.record(z.string(), z.any()).describe("REQUIRED: Object containing the attributes to update. Only specified attributes will be changed (partial update). Common fields: 'title', 'description'. Type-specific fields: Dashboard: 'panelsJSON', 'timeRestore'. Visualization: 'visState', 'uiStateJSON'. All JSON fields should be strings."),
       references: z.array(z.object({
         id: z.string().describe("ID of the referenced object"),
         type: z.string().describe("Type of the referenced object"),
         name: z.string().describe("Reference name used in the object")
       })).optional().describe("OPTIONAL: Array of references to other saved objects. Updates the object's references. Each reference needs id, type, and name."),
       version: z.string().optional().describe("OPTIONAL: Version string for optimistic concurrency control. Use this to prevent conflicts when multiple processes update the same object. Get the version from a previous get/search operation."),
-      upsert: z.record(z.any()).optional().describe("OPTIONAL: Attributes to use if the object doesn't exist (will create object if not found). Useful for create-or-update scenarios."),
+      upsert: z.record(z.string(), z.any()).optional().describe("OPTIONAL: Attributes to use if the object doesn't exist (will create object if not found). Useful for create-or-update scenarios."),
       space: z.string().optional().describe("Target Kibana space (optional, defaults to configured space)")
     }),
     async (params: { 
@@ -432,7 +432,7 @@ export function registerVLUpdateTools(server: ServerBase, kibanaClient: KibanaCl
           return val;
         }).describe("REQUIRED: The saved object type. Common types: 'dashboard', 'visualization', 'index-pattern', 'search', 'config', 'lens', 'map', 'tag', 'canvas-workpad', 'canvas-element'. Supports multiple formats but will use first type."),
         id: z.string().describe("REQUIRED: The saved object ID. This is the unique identifier for the object you want to update."),
-        attributes: z.record(z.any()).describe("REQUIRED: Object containing the attributes to update. Only specified attributes will be changed (partial update)."),
+        attributes: z.record(z.string(), z.any()).describe("REQUIRED: Object containing the attributes to update. Only specified attributes will be changed (partial update)."),
         references: z.array(z.object({
           id: z.string().describe("ID of the referenced object"),
           type: z.string().describe("Type of the referenced object"),

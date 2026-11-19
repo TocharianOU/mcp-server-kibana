@@ -205,7 +205,7 @@ pattern) over letting the server auto-generate one.`,
       method: z.enum(['GET', 'POST', 'PUT', 'DELETE']),
       path: z.string(),
       body: z.any().optional(),
-      params: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
+      params: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
       space: z.string().optional().describe("Target Kibana space (optional, defaults to configured space)"),
       break_token_rule: z.boolean().optional().default(false).describe("Set to true to bypass token limits in critical situations. Use sparingly to avoid context overflow.")
     }),
