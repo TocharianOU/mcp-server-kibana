@@ -257,7 +257,7 @@ async function vl_bulk_update_saved_objects_impl(
 
     // Make the API call
     const url = `/api/saved_objects/_bulk_update`;
-    const response = await kibanaClient.post(url, processedObjects, { space });
+    const response = await kibanaClient.put(url, processedObjects, { space });
     
     // Process the response
     const savedObjects = response.saved_objects || [];

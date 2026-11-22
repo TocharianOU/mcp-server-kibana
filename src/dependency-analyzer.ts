@@ -138,6 +138,19 @@ export async function buildDependencyTree(
 /**
  * Analyze impact scope of deleting/modifying an object
  */
+function findReferencingObjects(
+  kibanaClient: KibanaClient,
+  types: string[],
+  reference: { type: string; id: string },
+  space?: string
+) {
+  const params = new URLSearchParams();
+  types.forEach(type => params.append('type', type));
+  params.append('has_reference', JSON.stringify(reference));
+  params.append('per_page', '100');
+  return kibanaClient.get(`/api/saved_objects/_find?${params}`, { space });
+}
+
 export async function analyzeImpact(
   kibanaClient: KibanaClient,
   targetId: string,
@@ -146,14 +159,11 @@ export async function analyzeImpact(
 ): Promise<ImpactAnalysis> {
   // Reverse search: find all objects that reference this object
   try {
-    const searchResult = await kibanaClient.post(
-      '/api/saved_objects/_find',
-      {
-        type: ['dashboard', 'visualization', 'lens', 'search', 'map'],
-        hasReference: { type: targetType, id: targetId },
-        perPage: 100
-      },
-      { space }
+    const searchResult = await findReferencingObjects(
+      kibanaClient,
+      ['dashboard', 'visualization', 'lens', 'search', 'map'],
+      { type: targetType, id: targetId },
+      space
     );
 
     const directDeps = searchResult.saved_objects || [];
@@ -165,20 +175,24 @@ export async function analyzeImpact(
         name: obj.attributes?.title || obj.id
       }));
 
-    // Recursively find indirect dependencies (what references the dependent objects)
+    // Dashboards that use the target through another object (e.g. via a visualization)
+    // break just as much, so they count as affected too.
     let indirectCount = 0;
     for (const dep of directDeps) {
       if (dep.type !== 'dashboard') {
-        const secondLevel = await kibanaClient.post(
-          '/api/saved_objects/_find',
-          {
-            type: ['dashboard'],
-            hasReference: { type: dep.type, id: dep.id },
-            perPage: 100
-          },
-          { space }
+        const secondLevel = await findReferencingObjects(
+          kibanaClient,
+          ['dashboard'],
+          { type: dep.type, id: dep.id },
+          space
         );
-        indirectCount += (secondLevel.saved_objects || []).length;
+        const indirectDashboards = secondLevel.saved_objects || [];
+        indirectCount += indirectDashboards.length;
+        for (const dashboard of indirectDashboards) {
+          if (!affectedDashboards.some((d: SavedObjectRef) => d.id === dashboard.id)) {
+            affectedDashboards.push({ id: dashboard.id, type: dashboard.type, name: dashboard.attributes?.title || dashboard.id });
+          }
+        }
       }
     }
 

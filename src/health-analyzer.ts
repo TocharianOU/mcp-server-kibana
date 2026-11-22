@@ -249,15 +249,8 @@ export async function batchAnalyzeDashboards(
 ): Promise<BatchHealthReport> {
   try {
     // Search all Dashboards
-    const searchResult = await kibanaClient.post(
-      '/api/saved_objects/_find',
-      {
-        type: 'dashboard',
-        perPage: maxDashboards,
-        fields: ['title']
-      },
-      { space }
-    );
+    const params = new URLSearchParams({ type: 'dashboard', per_page: String(maxDashboards), fields: 'title' });
+    const searchResult = await kibanaClient.get(`/api/saved_objects/_find?${params}`, { space });
 
     const dashboards = searchResult.saved_objects || [];
     const healthReports: DashboardHealth[] = [];

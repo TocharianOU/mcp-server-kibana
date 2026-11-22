@@ -24,7 +24,6 @@ import { checkTokenLimit } from "./utils/token-limiter.js";
  * @param fields - Fields to return (optional)
  * @param filter - KQL filter (optional)
  * @param sortField - Field to sort by (optional)
- * @param sortOrder - Sort order: 'asc' for ascending, 'desc' for descending (optional)
  * @param defaultSearchOperator - Default operator for simple_query_string (optional)
  * @param searchFields - Fields to perform the search query against (optional)
  * @param hasReference - Filter to objects that have a relationship with the type and ID combination (optional)
@@ -44,7 +43,6 @@ async function vl_search_saved_objects_impl(
   fields?: string | string[],
   filter?: string,
   sortField?: string,
-  sortOrder?: 'asc' | 'desc',
   defaultSearchOperator?: string,
   searchFields?: string | string[],
   hasReference?: any,
@@ -116,10 +114,6 @@ async function vl_search_saved_objects_impl(
   // Sorting
   if (sortField) {
     params.append('sort_field', sortField);
-  }
-  
-  if (sortOrder) {
-    params.append('sort_order', sortOrder);
   }
   
   // Search behavior
@@ -299,8 +293,7 @@ export function registerVlTools(server: ServerBase, kibanaClient: KibanaClient, 
         return [val];
       }).optional().describe("PERFORMANCE OPTIMIZATION: Specify which fields to return in the attributes key. Examples: ['title', 'description'] for basic info, ['title', 'description', 'updated_at'] for metadata. IMPORTANT: Using this parameter dramatically improves response speed and reduces data size. Without it, all object data is returned which can be very slow for large objects."),
       filter: z.string().optional().describe("KQL string filter (e.g., 'dashboard.attributes.title: \"My Dashboard\"')"),
-      sortField: z.string().optional().describe("Field to sort by (e.g., 'updated_at', 'created_at', 'type', 'dashboard.attributes.title')"),
-      sortOrder: z.enum(['asc', 'desc']).optional().describe("Sort order: 'asc' for ascending, 'desc' for descending (default: 'desc')"),
+      sortField: z.string().optional().describe("Field to sort by: 'updated_at', 'created_at' or 'type'. Kibana returns results in ascending order only (oldest first for dates); its API has no option for descending order. Titles cannot be sorted on (they are full-text fields in Kibana's index)."),
       defaultSearchOperator: z.string().optional().describe("Default operator for simple_query_string (OR/AND, default: OR)"),
       // searchFields: z.union([z.string(), z.array(z.string())]).transform(val => {
       //   if (Array.isArray(val)) return val;
@@ -332,7 +325,6 @@ export function registerVlTools(server: ServerBase, kibanaClient: KibanaClient, 
         params.fields,
         params.filter,
         params.sortField,
-        params.sortOrder,
         params.defaultSearchOperator,
         undefined,
         params.hasReference,
